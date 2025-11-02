@@ -31,6 +31,6 @@ object FavoritesTab : Tab {
     
     @Composable
     override fun Content() {
-        FavoritesScreen()
+        FavoritesScreen.Content()
     }
 }

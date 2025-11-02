@@ -71,4 +71,21 @@ interface UserPreferencesRepository {
      * @param listId The list ID to delete
      */
     suspend fun deleteFavoriteChannelList(listId: String)
+    
+    /**
+     * Update favorite channels in the default list.
+     * Convenience method for simple favorite management.
+     * 
+     * @param channelIds List of channel IDs in desired order
+     */
+    suspend fun updateFavoriteChannels(channelIds: List<String>)
+    
+    /**
+     * Create a new channel list (alias for createFavoriteChannelList).
+     * 
+     * @param list The list to create
+     */
+    suspend fun createChannelList(list: FavoriteChannelList) {
+        createFavoriteChannelList(list)
+    }
 }

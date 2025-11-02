@@ -1,7 +1,10 @@
 package cz.myapp.tvguide.di
 
+import cz.myapp.tvguide.domain.usecase.CreateChannelListUseCase
+import cz.myapp.tvguide.domain.usecase.GetAllChannelsUseCase
 import cz.myapp.tvguide.domain.usecase.GetCurrentProgramsUseCase
 import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
+import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
 
 /**
  * Domain layer dependency container.
@@ -10,9 +13,9 @@ import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
  * 
  * Use cases implemented:
  * - Phase 4 (US1): GetCurrentProgramsUseCase, GetFavoriteChannelsUseCase ✅
+ * - Phase 5 (US2): GetAllChannelsUseCase, UpdateFavoriteChannelsUseCase, CreateChannelListUseCase ✅
  * 
  * Upcoming use cases:
- * - Phase 5 (US2): GetAllChannelsUseCase, UpdateFavoriteChannelsUseCase, etc.
  * - Phase 6 (US3): GetEpgDataUseCase
  * - Phase 7 (US4): GetChronologicalProgramsUseCase, SearchProgramsUseCase
  * - Phase 7 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase
@@ -41,6 +44,36 @@ object DomainModule {
     val getFavoriteChannelsUseCase: GetFavoriteChannelsUseCase by lazy {
         GetFavoriteChannelsUseCase(
             channelRepository = DataModule.channelRepository,
+            userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to get all available channels.
+     * US2: Favorites Management
+     */
+    val getAllChannelsUseCase: GetAllChannelsUseCase by lazy {
+        GetAllChannelsUseCase(
+            channelRepository = DataModule.channelRepository
+        )
+    }
+    
+    /**
+     * Use case to update favorite channels list.
+     * US2: Favorites Management
+     */
+    val updateFavoriteChannelsUseCase: UpdateFavoriteChannelsUseCase by lazy {
+        UpdateFavoriteChannelsUseCase(
+            userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to create custom channel lists.
+     * US2: Favorites Management
+     */
+    val createChannelListUseCase: CreateChannelListUseCase by lazy {
+        CreateChannelListUseCase(
             userPreferencesRepository = DataModule.userPreferencesRepository
         )
     }

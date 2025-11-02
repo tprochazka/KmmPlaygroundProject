@@ -92,6 +92,24 @@ class LocalUserPreferencesRepository : UserPreferencesRepository {
         AppLogger.i(tag) { "Favorite channel list deleted: $listId" }
     }
     
+    override suspend fun updateFavoriteChannels(channelIds: List<String>) {
+        AppLogger.d(tag) { "updateFavoriteChannels: channelIds=${channelIds.size}" }
+        DelaySimulator.fastDelay()
+        
+        // Update the default list with new channel IDs
+        val defaultList = favoriteListsFlow.value["default"]
+        if (defaultList != null) {
+            val updatedList = defaultList.copy(
+                channelIds = channelIds,
+                updatedAt = Clock.System.now()
+            )
+            favoriteListsFlow.value = favoriteListsFlow.value + ("default" to updatedList)
+            AppLogger.i(tag) { "Default favorite channels updated: ${channelIds.size} channels" }
+        } else {
+            AppLogger.w(tag) { "Default favorite list not found, cannot update channels" }
+        }
+    }
+    
     /**
      * Create a default favorite channel list with popular Czech channels.
      */
