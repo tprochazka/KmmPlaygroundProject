@@ -1,7 +1,8 @@
 package cz.myapp.tvguide.data.mock
 
 import cz.myapp.tvguide.domain.model.*
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
+import kotlin.time.Clock
 import kotlin.random.Random
 
 /**
@@ -61,7 +62,7 @@ class ChannelBuilder {
     var isHd: Boolean = false
     var isActive: Boolean = true
     var streamUrl: String? = null
-    private val now = kotlinx.datetime.Clock.System.now()
+    private val now = Clock.System.now()
     var createdAt: Instant = now
     var updatedAt: Instant = now
     
@@ -91,9 +92,9 @@ class ProgramBuilder {
     var subtitle: String? = null
     var description: String = "Program description"
     var shortDescription: String = "Short description"
-    private val now = kotlinx.datetime.Clock.System.now()
+    private val now = Clock.System.now()
     var startTime: Instant = now
-    var endTime: Instant = kotlinx.datetime.Instant.fromEpochMilliseconds(
+    var endTime: Instant = Instant.fromEpochMilliseconds(
         now.toEpochMilliseconds() + 60 * 60 * 1000 // +1 hour
     )
     var type: ProgramType = ProgramType.OTHER
@@ -118,7 +119,7 @@ class ProgramBuilder {
      * Set duration instead of end time (convenience method).
      */
     fun durationMinutes(minutes: Int) {
-        endTime = kotlinx.datetime.Instant.fromEpochMilliseconds(
+        endTime = Instant.fromEpochMilliseconds(
             startTime.toEpochMilliseconds() + minutes * 60 * 1000L
         )
     }
@@ -161,7 +162,7 @@ class FavoriteChannelListBuilder {
     var channelIds: List<String> = emptyList()
     var isDefault: Boolean = false
     var userId: String = "default"
-    private val now = kotlinx.datetime.Clock.System.now()
+    private val now = Clock.System.now()
     var createdAt: Instant = now
     var updatedAt: Instant = now
     

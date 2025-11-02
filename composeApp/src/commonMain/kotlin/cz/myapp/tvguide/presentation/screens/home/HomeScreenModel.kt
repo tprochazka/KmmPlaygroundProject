@@ -11,7 +11,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Screen model for HomeScreen.
@@ -48,10 +48,14 @@ class HomeScreenModel(
             
             try {
                 // Get favorite channels first
+                AppLogger.d("HomeScreenModel") { "Getting favorite channels..." }
                 val favoriteChannels = getFavoriteChannelsUseCase()
                     .first() // Take first emission
                 
+                AppLogger.d("HomeScreenModel") { "Got ${favoriteChannels.size} favorite channels" }
+                
                 if (favoriteChannels.isEmpty()) {
+                    AppLogger.w("HomeScreenModel") { "No favorite channels found!" }
                     _state.value = HomeScreenState.Empty(message = "Žádné oblíbené kanály")
                     return@launch
                 }

@@ -1,95 +1,26 @@
 package cz.myapp.tvguide.util
 
-import co.touchlab.kermit.Logger
-import co.touchlab.kermit.Severity
-
 /**
- * Application-wide logger wrapper using Kermit.
- * 
- * Provides convenient logging methods with consistent tagging and formatting.
- * 
- * Usage:
- * ```kotlin
- * AppLogger.d("MyTag") { "Debug message" }
- * AppLogger.e("MyTag", throwable) { "Error message" }
- * ```
+ * Lightweight logger wrapper (println-based) for deterministic console output across KMP targets.
+ * Replaces Kermit temporarily to debug data flow issues.
  */
 object AppLogger {
-    
-    private val logger = Logger.withTag("TvGuide")
-    
-    /**
-     * Log a verbose message.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun v(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.v(throwable, tag) { message() }
+    private fun log(level: String, tag: String, msg: String, throwable: Throwable?) {
+        val tagPart = if (tag.isNotBlank()) "$tag: " else ""
+        val throwablePart = throwable?.let { "\n" + it.stackTraceToString() } ?: ""
+        println("[$level] ${tagPart}${msg}${throwablePart}")
     }
-    
-    /**
-     * Log a debug message.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun d(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.d(throwable, tag) { message() }
-    }
-    
-    /**
-     * Log an info message.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun i(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.i(throwable, tag) { message() }
-    }
-    
-    /**
-     * Log a warning message.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun w(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.w(throwable, tag) { message() }
-    }
-    
-    /**
-     * Log an error message.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun e(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.e(throwable, tag) { message() }
-    }
-    
-    /**
-     * Log an assertion failure.
-     * 
-     * @param tag Optional tag to identify the source
-     * @param throwable Optional exception to log
-     * @param message Message provider lambda
-     */
-    fun a(tag: String = "", throwable: Throwable? = null, message: () -> String) {
-        logger.a(throwable, tag) { message() }
-    }
-    
-    /**
-     * Set minimum log severity level.
-     * 
-     * @param severity Minimum severity to log (Verbose, Debug, Info, Warn, Error, Assert)
-     */
-    fun setMinSeverity(severity: Severity) {
-        Logger.setMinSeverity(severity)
-    }
+
+    fun v(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("VERBOSE", tag, message(), throwable)
+    fun d(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("DEBUG", tag, message(), throwable)
+    fun i(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("INFO", tag, message(), throwable)
+    fun w(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("WARN", tag, message(), throwable)
+    fun e(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("ERROR", tag, message(), throwable)
+    fun a(tag: String = "", throwable: Throwable? = null, message: () -> String) =
+        log("ASSERT", tag, message(), throwable)
 }

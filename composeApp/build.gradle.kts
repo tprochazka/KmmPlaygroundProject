@@ -1,6 +1,8 @@
+import org.gradle.kotlin.dsl.configure
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -125,6 +127,19 @@ kotlin {
             // Database - Room (iOS)
             implementation(libs.room.runtime)
             implementation(libs.sqlite.bundled)
+        }
+    }
+
+    // Global compiler opt-ins for experimental APIs
+    targets.configureEach {
+        compilations.configureEach {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    // Global opt-in for kotlinx-datetime 0.7.x ExperimentalTime API
+                    freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
+                    freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+                }
+            }
         }
     }
 }

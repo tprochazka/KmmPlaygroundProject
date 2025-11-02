@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 
 /**
  * Use case to get current programs for channels.
@@ -61,18 +61,24 @@ class GetCurrentProgramsUseCase(
     fun forChannels(channelIds: List<String>): Flow<Result<List<Pair<Channel, Program?>>>> {
         return channelRepository.getAllChannels()
             .flatMapLatest { channels ->
+                AppLogger.d("GetCurrentProgramsUseCase") { "forChannels: repository returned ${channels.size} total channels" }
                 programRepository.getCurrentPrograms(channelIds)
                     .map { currentPrograms ->
                         AppLogger.d("GetCurrentProgramsUseCase") { "Filtering for ${channelIds.size} channels" }
+                        AppLogger.d("GetCurrentProgramsUseCase") { "Program map size=${currentPrograms.size} keys=${currentPrograms.keys.take(5)}..." }
                         
                         // Filter channels by ID and pair with programs
                         val pairs = channels
                             .filter { it.id in channelIds }
                             .map { channel ->
                                 val program = currentPrograms[channel.id]
+                                AppLogger.d("GetCurrentProgramsUseCase") {
+                                    "Pair channel='${channel.id}' program='${program?.title ?: "NONE"}' start='${program?.startTime}' end='${program?.endTime}'"
+                                }
                                 channel to program
                             }
                         
+                        AppLogger.i("GetCurrentProgramsUseCase") { "forChannels result: ${pairs.count { it.second != null }} programs / ${pairs.size} channels" }
                         Result.success(pairs)
                     }
             }

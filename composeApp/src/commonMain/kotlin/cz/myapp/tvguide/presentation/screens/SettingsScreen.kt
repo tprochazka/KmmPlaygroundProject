@@ -29,7 +29,7 @@ fun SettingsScreen() {
             style = MaterialTheme.typography.headlineMedium
         )
         
-        Divider()
+        HorizontalDivider()
         
         // Theme selection
         Text(

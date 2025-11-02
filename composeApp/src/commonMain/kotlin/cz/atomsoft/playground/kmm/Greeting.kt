@@ -1,9 +1,8 @@
 package cz.atomsoft.playground.kmm
 
+// Deprecated skeleton code retained only to satisfy any lingering references.
+// Returning static string to avoid platform init and conflicting App.
+@Deprecated("Skeleton placeholder")
 class Greeting {
-    private val platform = getPlatform()
-
-    fun greet(): String {
-        return "Hello, ${platform.name}!"
-    }
+    fun greet(): String = "(deprecated skeleton)"
 }

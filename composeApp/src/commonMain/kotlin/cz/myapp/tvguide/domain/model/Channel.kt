@@ -1,6 +1,6 @@
 package cz.myapp.tvguide.domain.model
 
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
 
 /**
  * Represents a TV channel in the program guide.

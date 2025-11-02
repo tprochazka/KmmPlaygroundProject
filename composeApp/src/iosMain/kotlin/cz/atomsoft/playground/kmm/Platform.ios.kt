@@ -1,9 +1,4 @@
 package cz.atomsoft.playground.kmm
 
-import platform.UIKit.UIDevice
-
-class IOSPlatform: Platform {
-    override val name: String = UIDevice.currentDevice.systemName() + " " + UIDevice.currentDevice.systemVersion
-}
-
-actual fun getPlatform(): Platform = IOSPlatform()
+// Deprecated skeleton platform file neutralized. Removing actual declaration to avoid expect/actual mismatch.
+// Kept package to satisfy source set; no active declarations needed.

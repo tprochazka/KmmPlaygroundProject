@@ -28,6 +28,7 @@ class GetFavoriteChannelsUseCase(
      *         Returns all channels if no favorites configured.
      */
     operator fun invoke(userId: String = "default_user"): Flow<List<Channel>> {
+        AppLogger.d("GetFavoriteChannelsUseCase") { "invoke called with userId=$userId" }
         return combine(
             channelRepository.getAllChannels(),
             userPreferencesRepository.getFavoriteChannelLists(userId)
@@ -36,6 +37,8 @@ class GetFavoriteChannelsUseCase(
             
             // Find default favorite list
             val defaultList = favoriteLists.firstOrNull { it.isDefault }
+            
+            AppLogger.d("GetFavoriteChannelsUseCase") { "Default list: ${defaultList?.id}, channelIds: ${defaultList?.channelIds?.size}" }
             
             if (defaultList != null && defaultList.channelIds.isNotEmpty()) {
                 // Create map for quick lookup

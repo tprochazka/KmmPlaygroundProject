@@ -1,7 +1,6 @@
 package cz.myapp.tvguide.domain.model
 
-import kotlinx.datetime.Instant
-import kotlin.time.Duration
+import kotlin.time.Instant
 
 /**
  * Represents a TV program scheduled on a channel.
@@ -75,10 +74,10 @@ data class Program(
     }
     
     /**
-     * Calculate program duration.
+     * Program duration in whole minutes (derived from start/end epoch millis).
      */
-    val duration: Duration
-        get() = endTime - startTime
+    val durationMinutes: Long
+        get() = (endTime.toEpochMilliseconds() - startTime.toEpochMilliseconds()) / 60_000L
 }
 
 /**

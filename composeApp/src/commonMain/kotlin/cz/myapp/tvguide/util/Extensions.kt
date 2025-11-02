@@ -1,11 +1,13 @@
 package cz.myapp.tvguide.util
 
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.*
-import kotlin.time.Duration
 
 /**
  * Extension functions for common operations in TV Guide app.
  */
+// Duration experimental APIs avoided for now to reduce opt-in complexity.
 
 // ============================================================================
 // DateTime Extensions
@@ -33,7 +35,7 @@ fun Instant.formatTime(use24Hour: Boolean = true, timeZone: TimeZone = TimeZone.
  */
 fun Instant.formatDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val localDateTime = this.toLocalDateTime(timeZone)
-    return "${localDateTime.dayOfMonth}.${localDateTime.monthNumber}.${localDateTime.year}"
+    return "${localDateTime.day}.${localDateTime.month.ordinal + 1}.${localDateTime.year}"
 }
 
 /**
@@ -51,16 +53,18 @@ fun Instant.formatDateTime(
  */
 fun Instant.formatRelative(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val now = Clock.System.now()
-    val diff = this - now
-    
+    val diffMillis = this.toEpochMilliseconds() - now.toEpochMilliseconds()
+    val minutes = diffMillis / 60_000
+    val hours = diffMillis / 3_600_000
+    val days = diffMillis / 86_400_000
     return when {
-        diff.inWholeMinutes == 0L -> "nyní"
-        diff.inWholeMinutes < 0 && diff.inWholeMinutes > -60 -> "před ${-diff.inWholeMinutes} min"
-        diff.inWholeMinutes > 0 && diff.inWholeMinutes < 60 -> "za ${diff.inWholeMinutes} min"
-        diff.inWholeHours < 0 && diff.inWholeHours > -24 -> "před ${-diff.inWholeHours} h"
-        diff.inWholeHours > 0 && diff.inWholeHours < 24 -> "za ${diff.inWholeHours} h"
-        diff.inWholeDays < 0 -> "před ${-diff.inWholeDays} dny"
-        diff.inWholeDays > 0 -> "za ${diff.inWholeDays} dny"
+        minutes == 0L -> "nyní"
+        minutes < 0 && minutes > -60 -> "před ${-minutes} min"
+        minutes > 0 && minutes < 60 -> "za ${minutes} min"
+        hours < 0 && hours > -24 -> "před ${-hours} h"
+        hours > 0 && hours < 24 -> "za ${hours} h"
+        days < 0 -> "před ${-days} dny"
+        days > 0 -> "za ${days} dny"
         else -> formatDate(timeZone)
     }
 }
@@ -112,16 +116,12 @@ fun Instant.isToday(timeZone: TimeZone = TimeZone.currentSystemDefault()): Boole
 /**
  * Check if this Instant is in the past.
  */
-fun Instant.isPast(): Boolean {
-    return this < Clock.System.now()
-}
+fun Instant.isPast(): Boolean = this.toEpochMilliseconds() < Clock.System.now().toEpochMilliseconds()
 
 /**
  * Check if this Instant is in the future.
  */
-fun Instant.isFuture(): Boolean {
-    return this > Clock.System.now()
-}
+fun Instant.isFuture(): Boolean = this.toEpochMilliseconds() > Clock.System.now().toEpochMilliseconds()
 
 /**
  * Get start of day for this Instant.
@@ -131,7 +131,7 @@ fun Instant.startOfDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): In
     return LocalDateTime(
         localDateTime.year,
         localDateTime.month,
-        localDateTime.dayOfMonth,
+        localDateTime.day,
         0, 0, 0, 0
     ).toInstant(timeZone)
 }
@@ -144,7 +144,7 @@ fun Instant.endOfDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): Inst
     return LocalDateTime(
         localDateTime.year,
         localDateTime.month,
-        localDateTime.dayOfMonth,
+        localDateTime.day,
         23, 59, 59, 999_999_999
     ).toInstant(timeZone)
 }
@@ -156,10 +156,10 @@ fun Instant.endOfDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): Inst
 /**
  * Format Duration to human-readable string (e.g., "2h 30min", "45min").
  */
-fun Duration.formatDuration(): String {
-    val hours = inWholeHours
-    val minutes = inWholeMinutes % 60
-    
+fun formatDuration(start: Instant, end: Instant): String {
+    val totalMinutes = (end.toEpochMilliseconds() - start.toEpochMilliseconds()) / 60_000
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
     return when {
         hours > 0 && minutes > 0 -> "${hours}h ${minutes}min"
         hours > 0 -> "${hours}h"

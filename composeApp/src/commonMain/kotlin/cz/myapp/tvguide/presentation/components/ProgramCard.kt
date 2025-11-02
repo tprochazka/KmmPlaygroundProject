@@ -11,7 +11,7 @@ import cz.myapp.tvguide.domain.model.Channel
 import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.presentation.theme.LiveIndicatorColor
 import cz.myapp.tvguide.util.formatTime
-import kotlinx.datetime.Clock
+import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
 
 /**
@@ -83,7 +83,8 @@ fun ProgramCard(
             }
             
             if (program != null) {
-                Divider()
+                // Updated deprecated Divider to HorizontalDivider
+                HorizontalDivider()
                 
                 // Program info
                 Column(
@@ -117,8 +118,8 @@ fun ProgramCard(
                     
                     // Progress bar
                     val now = Clock.System.now()
-                    val totalDuration = (program.endTime - program.startTime).inWholeMilliseconds.toFloat()
-                    val elapsed = (now - program.startTime).inWholeMilliseconds.toFloat()
+                    val totalDuration = (program.endTime.toEpochMilliseconds() - program.startTime.toEpochMilliseconds()).toFloat()
+                    val elapsed = (now.toEpochMilliseconds() - program.startTime.toEpochMilliseconds()).toFloat()
                     val progress = (elapsed / totalDuration).coerceIn(0f, 1f)
                     
                     LinearProgressIndicator(

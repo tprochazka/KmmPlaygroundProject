@@ -2,7 +2,8 @@ package cz.myapp.tvguide.domain.repository
 
 import cz.myapp.tvguide.domain.model.Program
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
+import kotlin.time.Instant
+import kotlin.time.Clock
 
 /**
  * Repository for program data.
@@ -20,7 +21,7 @@ interface ProgramRepository {
      */
     fun getCurrentProgram(
         channelId: String,
-        time: Instant = kotlinx.datetime.Clock.System.now()
+    time: Instant = Clock.System.now()
     ): Flow<Program?>
     
     /**
@@ -32,7 +33,7 @@ interface ProgramRepository {
      */
     fun getCurrentPrograms(
         channelIds: List<String>,
-        time: Instant = kotlinx.datetime.Clock.System.now()
+    time: Instant = Clock.System.now()
     ): Flow<Map<String, Program?>>
     
     /**

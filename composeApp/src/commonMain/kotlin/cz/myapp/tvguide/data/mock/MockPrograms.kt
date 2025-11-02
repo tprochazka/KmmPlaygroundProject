@@ -2,11 +2,10 @@ package cz.myapp.tvguide.data.mock
 
 import cz.myapp.tvguide.domain.model.*
 import kotlinx.datetime.*
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.datetime.TimeZone
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 /**
  * Mock program data generator for Phase 1 prototype.
@@ -15,6 +14,7 @@ import kotlin.time.Duration.Companion.minutes
  */
 object MockPrograms {
     
+    // Anchor time for generation
     private val now = Clock.System.now()
     private val pragueTz = TimeZone.of("Europe/Prague")
     
@@ -24,8 +24,10 @@ object MockPrograms {
      * Programs are generated for 7 days starting from yesterday at midnight.
      */
     val all: List<Program> by lazy {
-        val startDate = (now - 1.days).toLocalDateTime(pragueTz)
-            .let { LocalDateTime(it.year, it.month, it.dayOfMonth, 0, 0) }
+        val oneDayMillis = 24L * 60 * 60 * 1000
+        val startDate = Instant.fromEpochMilliseconds(now.toEpochMilliseconds() - oneDayMillis)
+            .toLocalDateTime(pragueTz)
+            .let { LocalDateTime(it.year, it.month, it.day, 0, 0) }
             .toInstant(pragueTz)
         
         MockChannels.all.flatMap { channel ->
@@ -43,7 +45,7 @@ object MockPrograms {
     ): List<Program> {
         val programs = mutableListOf<Program>()
         var currentTime = startTime
-        val endTime = startTime + daysCount.days
+    val endTime = Instant.fromEpochMilliseconds(startTime.toEpochMilliseconds() + daysCount * 24L * 60 * 60 * 1000)
         
         while (currentTime < endTime) {
             val localTime = currentTime.toLocalDateTime(pragueTz)
@@ -60,7 +62,7 @@ object MockPrograms {
                 description = template.description
                 shortDescription = template.shortDescription
                 this.startTime = currentTime
-                this.endTime = currentTime + template.durationMinutes.minutes
+                this.endTime = Instant.fromEpochMilliseconds(currentTime.toEpochMilliseconds() + template.durationMinutes * 60L * 1000)
                 type = template.type
                 rating = template.rating
                 isLive = template.isLive
@@ -110,7 +112,12 @@ object MockPrograms {
             }
         }
         
-        return filteredTemplates.random()
+        // If no templates match the time slot, use all templates as fallback
+        return if (filteredTemplates.isNotEmpty()) {
+            filteredTemplates.random()
+        } else {
+            templates.random()
+        }
     }
     
     /**
@@ -280,6 +287,16 @@ object MockPrograms {
     
     private val regionalProgramTemplates = listOf(
         ProgramTemplate(
+            title = "Ranní region",
+            description = "Ranní zpravodajství z regionu",
+            shortDescription = "Ranní zprávy",
+            durationMinutes = 20,
+            type = ProgramType.NEWS,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.MORNING,
+            isLive = true
+        ),
+        ProgramTemplate(
             title = "Regionální zprávy",
             description = "Zprávy z regionu",
             shortDescription = "Regionální zpravodajství",
@@ -296,7 +313,7 @@ object MockPrograms {
             durationMinutes = 30,
             type = ProgramType.DOCUMENTARY,
             rating = AgeRating.ALL,
-            timeSlot = TimeSlot.AFTERNOON
+            timeSlot = TimeSlot.PRIME_TIME
         ),
         ProgramTemplate(
             title = "Repríza",
@@ -374,6 +391,15 @@ object MockPrograms {
             isLive = true
         ),
         ProgramTemplate(
+            title = "Sportovní magazín",
+            description = "Zprávy ze světa sportu",
+            shortDescription = "Sport",
+            durationMinutes = 60,
+            type = ProgramType.SPORTS,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.AFTERNOON
+        ),
+        ProgramTemplate(
             title = "Fotbal: Liga mistrů",
             description = "Přímý přenos zápasu Ligy mistrů",
             shortDescription = "Fotbal ŽIVĚ",
@@ -407,6 +433,16 @@ object MockPrograms {
             isLive = true
         ),
         ProgramTemplate(
+            title = "Polední zprávy",
+            description = "Zpravodajství o poledni",
+            shortDescription = "Zprávy",
+            durationMinutes = 30,
+            type = ProgramType.NEWS,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.AFTERNOON,
+            isLive = true
+        ),
+        ProgramTemplate(
             title = "Reportéři",
             description = "Investigativní reportáže",
             shortDescription = "Reportáže",
@@ -414,6 +450,16 @@ object MockPrograms {
             type = ProgramType.NEWS,
             rating = AgeRating.PG_12,
             timeSlot = TimeSlot.PRIME_TIME
+        ),
+        ProgramTemplate(
+            title = "Noční zprávy",
+            description = "Shrnutí dne",
+            shortDescription = "Zprávy",
+            durationMinutes = 20,
+            type = ProgramType.NEWS,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.LATE_NIGHT,
+            isLive = true
         )
     )
     
@@ -450,10 +496,28 @@ object MockPrograms {
             timeSlot = TimeSlot.PRIME_TIME,
             year = 2013,
             genres = listOf("Animovaný", "Fantasy")
+        ),
+        ProgramTemplate(
+            title = "Dobrou noc, děti",
+            description = "Večerní pohádka na dobrou noc",
+            shortDescription = "Pohádka",
+            durationMinutes = 15,
+            type = ProgramType.KIDS,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.LATE_NIGHT
         )
     )
     
     private val musicProgramTemplates = listOf(
+        ProgramTemplate(
+            title = "Ranní hudba",
+            description = "Ranní hudební mix",
+            shortDescription = "Hudební mix",
+            durationMinutes = 60,
+            type = ProgramType.MUSIC,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.MORNING
+        ),
         ProgramTemplate(
             title = "Top 40",
             description = "Žebříček 40 nejlepších hitů",
@@ -462,6 +526,16 @@ object MockPrograms {
             type = ProgramType.MUSIC,
             rating = AgeRating.ALL,
             timeSlot = TimeSlot.AFTERNOON
+        ),
+        ProgramTemplate(
+            title = "Live koncert",
+            description = "Živý koncert populární kapely",
+            shortDescription = "Živý koncert",
+            durationMinutes = 90,
+            type = ProgramType.MUSIC,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.PRIME_TIME,
+            isLive = true
         ),
         ProgramTemplate(
             title = "Hudební klipy",
@@ -475,6 +549,15 @@ object MockPrograms {
     )
     
     private val documentaryProgramTemplates = listOf(
+        ProgramTemplate(
+            title = "Ranní dokument",
+            description = "Inspirativní dokument do rána",
+            shortDescription = "Dokument",
+            durationMinutes = 30,
+            type = ProgramType.DOCUMENTARY,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.MORNING
+        ),
         ProgramTemplate(
             title = "Planeta Země",
             description = "Dokument o přírodě naší planety",
@@ -495,10 +578,28 @@ object MockPrograms {
             rating = AgeRating.PG_12,
             timeSlot = TimeSlot.PRIME_TIME,
             year = 2018
+        ),
+        ProgramTemplate(
+            title = "Noční svět zvířat",
+            description = "Noční život divokých zvířat",
+            shortDescription = "Příroda",
+            durationMinutes = 45,
+            type = ProgramType.DOCUMENTARY,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.LATE_NIGHT
         )
     )
     
     private val generalProgramTemplates = listOf(
+        ProgramTemplate(
+            title = "Ranní show",
+            description = "Zábavný ranní pořad",
+            shortDescription = "Show",
+            durationMinutes = 60,
+            type = ProgramType.ENTERTAINMENT,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.MORNING
+        ),
         ProgramTemplate(
             title = "Magazín",
             description = "Zábavně-vzdělávací magazín",
@@ -507,6 +608,24 @@ object MockPrograms {
             type = ProgramType.ENTERTAINMENT,
             rating = AgeRating.ALL,
             timeSlot = TimeSlot.AFTERNOON
+        ),
+        ProgramTemplate(
+            title = "Večerní show",
+            description = "Večerní zábavný pořad",
+            shortDescription = "Show",
+            durationMinutes = 90,
+            type = ProgramType.ENTERTAINMENT,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.PRIME_TIME
+        ),
+        ProgramTemplate(
+            title = "Noční film",
+            description = "Film do nočních hodin",
+            shortDescription = "Film",
+            durationMinutes = 120,
+            type = ProgramType.MOVIE,
+            rating = AgeRating.PG_15,
+            timeSlot = TimeSlot.LATE_NIGHT
         )
     )
     
@@ -522,6 +641,15 @@ object MockPrograms {
             isLive = true
         ),
         ProgramTemplate(
+            title = "International Talk Show",
+            description = "Afternoon talk show",
+            shortDescription = "Talk show",
+            durationMinutes = 60,
+            type = ProgramType.ENTERTAINMENT,
+            rating = AgeRating.ALL,
+            timeSlot = TimeSlot.AFTERNOON
+        ),
+        ProgramTemplate(
             title = "International Movie",
             description = "Foreign language film",
             shortDescription = "Movie",
@@ -530,6 +658,15 @@ object MockPrograms {
             rating = AgeRating.PG_12,
             timeSlot = TimeSlot.PRIME_TIME,
             year = 2020
+        ),
+        ProgramTemplate(
+            title = "Late Night International",
+            description = "Late night international programming",
+            shortDescription = "Late night",
+            durationMinutes = 90,
+            type = ProgramType.ENTERTAINMENT,
+            rating = AgeRating.PG_15,
+            timeSlot = TimeSlot.LATE_NIGHT
         )
     )
 }

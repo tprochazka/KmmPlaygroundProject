@@ -7,8 +7,8 @@ import cz.myapp.tvguide.domain.repository.ProgramRepository
 import cz.myapp.tvguide.util.AppLogger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 
 /**
  * Mock implementation of ProgramRepository for Phase 1 prototype.

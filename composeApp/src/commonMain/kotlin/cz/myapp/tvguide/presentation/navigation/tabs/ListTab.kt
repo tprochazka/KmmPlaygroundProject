@@ -1,7 +1,7 @@
 package cz.myapp.tvguide.presentation.navigation.tabs
 
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
@@ -18,7 +18,7 @@ object ListTab : Tab {
         @Composable
         get() {
             val title = "Seznam"
-            val icon = rememberVectorPainter(Icons.Default.List)
+            val icon = rememberVectorPainter(Icons.AutoMirrored.Filled.List)
             
             return remember {
                 TabOptions(
