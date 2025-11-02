@@ -51,6 +51,7 @@ coil-network-ktor = { module = "io.coil-kt.coil3:coil-network-ktor", version.ref
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 sqlite-bundled = { module = "androidx.sqlite:sqlite-bundled", version = "2.5.0-alpha13" }
+metro-runtime = { module = "dev.zacsweers.metro:runtime", version.ref = "metro" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

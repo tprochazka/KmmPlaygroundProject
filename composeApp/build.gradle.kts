@@ -80,6 +80,9 @@ kotlin {
 	        // Image Loading - Coil 3
 	        implementation(libs.coil.compose)
 	        
+	        // Dependency Injection - Metro DI
+	        implementation(libs.metro.runtime)
+	        
 	        // DateTime
 	        implementation(libs.kotlinx.datetime)
 
