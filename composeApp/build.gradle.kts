@@ -54,6 +54,30 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodelCompose)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+
+	        implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.1.2")
+	        implementation("org.jetbrains.compose.material3.adaptive:adaptive-layout:1.1.2")
+	        implementation("org.jetbrains.compose.material3.adaptive:adaptive-navigation:1.1.2")
+	        implementation("org.jetbrains.compose.material3:material3-adaptive-navigation-suite:1.9.0")
+	        implementation("tech.annexflow.compose:constraintlayout-compose-multiplatform:0.6.1")
+
+	        implementation("co.touchlab:kermit:2.0.8")
+
+	        // https://chrisbanes.github.io/haze/latest/
+	        implementation("dev.chrisbanes.haze:haze:1.6.10")
+
+	        //https://github.com/oleksandrbalan/programguide
+	        implementation("io.github.oleksandrbalan:programguide:1.6.0")
+
+	        //https://store.mobilenativefoundation.org/docs/quickstart
+	        //https://github.com/MayakaApps/Kache
+	        //https://github.com/open-tool/ultron
+	        //https://github.com/LemonAppDev/konsist
+	        //https://github.com/RaedGhazal/kotlinx-datetime-ext
+
+
+	        // TODO: Just for quick protyping, remove in the future
+	        implementation(compose.materialIconsExtended)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
