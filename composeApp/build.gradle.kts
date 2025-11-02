@@ -8,6 +8,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
@@ -46,6 +48,10 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            
+            // Database - Room (Android)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -95,11 +101,37 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            
+            // Database - Room (Android)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            
+            // Database - Room (Desktop)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
+        iosMain.dependencies {
+            // Database - Room (iOS)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
     }
+}
+
+// Room KSP configuration
+dependencies {
+    add("kspCommonMainMetadata", libs.room.compiler)
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {
