@@ -20,11 +20,11 @@ fun Instant.formatTime(use24Hour: Boolean = true, timeZone: TimeZone = TimeZone.
     val minute = localDateTime.minute
     
     return if (use24Hour) {
-        "%02d:%02d".format(hour, minute)
+        "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
     } else {
         val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
         val amPm = if (hour < 12) "AM" else "PM"
-        "%d:%02d %s".format(hour12, minute, amPm)
+        "$hour12:${minute.toString().padStart(2, '0')} $amPm"
     }
 }
 
@@ -33,11 +33,7 @@ fun Instant.formatTime(use24Hour: Boolean = true, timeZone: TimeZone = TimeZone.
  */
 fun Instant.formatDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
     val localDateTime = this.toLocalDateTime(timeZone)
-    return "%d.%d.%d".format(
-        localDateTime.dayOfMonth,
-        localDateTime.monthNumber,
-        localDateTime.year
-    )
+    return "${localDateTime.dayOfMonth}.${localDateTime.monthNumber}.${localDateTime.year}"
 }
 
 /**
@@ -228,9 +224,9 @@ fun <T, K> List<T>.groupByPreservingOrder(keySelector: (T) -> K): List<Pair<K, L
 fun Float.formatPercent(): String {
     val percent = this * 100
     return when {
-        percent % 1.0f == 0.0f -> "%.0f%%".format(percent)
-        percent % 0.1f == 0.0f -> "%.1f%%".format(percent)
-        else -> "%.2f%%".format(percent)
+        percent % 1.0f == 0.0f -> "${percent.toInt()}%"
+        percent % 0.1f == 0.0f -> "${(percent * 10).toInt() / 10.0}%"
+        else -> "${(percent * 100).toInt() / 100.0}%"
     }
 }
 
