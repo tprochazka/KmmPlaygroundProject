@@ -1,25 +1,88 @@
 package cz.myapp.tvguide.presentation.screens
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
+import cafe.adriel.voyager.core.model.ScreenModel
+import cafe.adriel.voyager.core.model.screenModelScope
+import cz.myapp.tvguide.di.DomainModule
+import cz.myapp.tvguide.presentation.components.*
+import cz.myapp.tvguide.presentation.screens.home.HomeScreenModel
+import cz.myapp.tvguide.presentation.screens.home.HomeScreenState
 
 /**
- * Home screen placeholder - Will show current TV programs (US1)
+ * Home screen - Shows current TV programs (US1)
+ * 
+ * Features:
+ * - Adaptive grid layout (1-3 columns based on screen size)
+ * - Auto-refresh every minute
+ * - Loading/empty/error states
+ * - Live indicator and progress bars
  */
 @Composable
 fun HomeScreen() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Domů - Aktuální vysílání",
-            style = MaterialTheme.typography.headlineMedium
+    // Create screen model with dependencies
+    val screenModel = remember {
+        HomeScreenModel(
+            getCurrentProgramsUseCase = DomainModule.getCurrentProgramsUseCase,
+            getFavoriteChannelsUseCase = DomainModule.getFavoriteChannelsUseCase
         )
+    }
+    
+    val state: HomeScreenState by screenModel.state.collectAsState()
+    
+    // Determine grid columns based on window size
+    val adaptiveInfo = currentWindowAdaptiveInfo()
+    val columns = when (adaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+        WindowWidthSizeClass.COMPACT -> 1    // Phone portrait
+        WindowWidthSizeClass.MEDIUM -> 2     // Phone landscape / small tablet
+        WindowWidthSizeClass.EXPANDED -> 3   // Tablet / desktop
+        else -> 1
+    }
+    
+    when (val currentState = state) {
+        is HomeScreenState.Loading -> {
+            LoadingIndicator(message = "Načítám programy...")
+        }
+        
+        is HomeScreenState.Success -> {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(columns),
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(
+                    items = currentState.programs,
+                    key = { (channel, _) -> channel.id }
+                ) { (channel, program) ->
+                    ProgramCard(
+                        channel = channel,
+                        program = program,
+                        onClick = {
+                            // TODO Phase 7: Navigate to program detail
+                        }
+                    )
+                }
+            }
+        }
+        
+        is HomeScreenState.Empty -> {
+            EmptyState(message = currentState.message)
+        }
+        
+        is HomeScreenState.Error -> {
+            ErrorState(
+                message = currentState.message,
+                onRetry = { screenModel.refresh() }
+            )
+        }
     }
 }
