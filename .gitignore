@@ -17,3 +17,25 @@ captures
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
 node_modules/
+
+# Kotlin/KMP
+*.class
+*.jar
+*.log
+out/
+.kotlin/
+kotlin-js-store/
+
+# Environment
+.env*
+*.env
+
+# IDE
+*.iws
+*.ipr
+.vscode/
+
+# OS
+Thumbs.db
+*.swp
+*.tmp

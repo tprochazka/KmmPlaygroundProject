@@ -29,10 +29,12 @@ kotlin {
     
     jvm()
     
-    js {
-        browser()
-        binaries.executable()
-    }
+    // JS target temporarily disabled - programguide library doesn't support it
+    // Re-enable when alternative EPG grid component is available
+    // js {
+    //     browser()
+    //     binaries.executable()
+    // }
     
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -62,6 +64,17 @@ kotlin {
 	        implementation("tech.annexflow.compose:constraintlayout-compose-multiplatform:0.6.1")
 
 	        implementation("co.touchlab:kermit:2.0.8")
+
+	        // Navigation - Voyager
+	        implementation(libs.voyager.navigator)
+	        implementation(libs.voyager.screenmodel)
+	        implementation(libs.voyager.tabNavigator)
+	        
+	        // Image Loading - Coil 3
+	        implementation(libs.coil.compose)
+	        
+	        // DateTime
+	        implementation(libs.kotlinx.datetime)
 
 	        // https://chrisbanes.github.io/haze/latest/
 	        implementation("dev.chrisbanes.haze:haze:1.6.10")
