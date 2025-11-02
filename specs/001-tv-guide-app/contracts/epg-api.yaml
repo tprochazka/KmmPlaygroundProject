@@ -1,0 +1,860 @@
+openapi: 3.0.3
+info:
+  title: EPG Provider API
+  description: |
+    Electronic Program Guide (EPG) API specification for TV Program Guide Application.
+    
+    This contract defines the expected interface for EPG data providers. Phase 1 prototype
+    uses mocked data, but this specification ensures future API integration compatibility.
+    
+    **Authentication**: API key via `X-API-Key` header
+    **Rate Limiting**: 100 requests/minute per API key
+    **Caching**: Responses include `Cache-Control` headers
+  version: 1.0.0
+  contact:
+    name: TV Guide API Support
+    email: api@tvguide.cz
+
+servers:
+  - url: https://api.tvguide.cz/v1
+    description: Production server
+  - url: https://api-staging.tvguide.cz/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Local development server
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: channels
+    description: Channel management operations
+  - name: programs
+    description: Program schedule operations
+  - name: cast
+    description: Cast and crew information
+  - name: sync
+    description: Data synchronization
+
+paths:
+  /channels:
+    get:
+      summary: Get all channels
+      description: Retrieve list of all available TV channels with optional filtering
+      operationId: getChannels
+      tags:
+        - channels
+      parameters:
+        - name: category
+          in: query
+          description: Filter by channel category
+          required: false
+          schema:
+            $ref: '#/components/schemas/ChannelCategory'
+        - name: active
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: language
+          in: query
+          description: Filter by language (ISO 639-1 code)
+          required: false
+          schema:
+            type: string
+            pattern: '^[a-z]{2}$'
+            example: cs
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 100
+        - name: offset
+          in: query
+          description: Pagination offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful response
+          headers:
+            X-Total-Count:
+              description: Total number of channels matching filter
+              schema:
+                type: integer
+            Cache-Control:
+              description: Caching directive
+              schema:
+                type: string
+                example: max-age=3600
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Channel'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /channels/{channelId}:
+    get:
+      summary: Get channel by ID
+      description: Retrieve detailed information about a specific channel
+      operationId: getChannelById
+      tags:
+        - channels
+      parameters:
+        - name: channelId
+          in: path
+          description: Unique channel identifier
+          required: true
+          schema:
+            type: string
+            example: ct1
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Channel'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /programs:
+    get:
+      summary: Get programs
+      description: |
+        Retrieve TV programs with flexible filtering options.
+        
+        **Time Range Query**: Use `startTime` and `endTime` to get programs in a specific period.
+        **Channel Filter**: Use `channelIds` to limit results to specific channels.
+        **Pagination**: Results are paginated; use `limit` and `offset`.
+      operationId: getPrograms
+      tags:
+        - programs
+      parameters:
+        - name: channelIds
+          in: query
+          description: Comma-separated list of channel IDs
+          required: false
+          schema:
+            type: string
+            example: ct1,ct2,nova
+        - name: startTime
+          in: query
+          description: Start of time range (ISO 8601)
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: '2025-11-02T00:00:00Z'
+        - name: endTime
+          in: query
+          description: End of time range (ISO 8601)
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: '2025-11-02T23:59:59Z'
+        - name: type
+          in: query
+          description: Filter by program type
+          required: false
+          schema:
+            $ref: '#/components/schemas/ProgramType'
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - name: offset
+          in: query
+          description: Pagination offset
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful response
+          headers:
+            X-Total-Count:
+              description: Total number of programs matching filter
+              schema:
+                type: integer
+            Cache-Control:
+              description: Caching directive
+              schema:
+                type: string
+                example: max-age=600
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Program'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /programs/{programId}:
+    get:
+      summary: Get program details
+      description: Retrieve detailed information about a specific program including cast
+      operationId: getProgramById
+      tags:
+        - programs
+      parameters:
+        - name: programId
+          in: path
+          description: Unique program identifier
+          required: true
+          schema:
+            type: string
+            example: p123456
+        - name: includeCast
+          in: query
+          description: Include cast information
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProgramDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /programs/{programId}/similar:
+    get:
+      summary: Get similar programs
+      description: Retrieve programs similar to the specified program (same genre, cast, etc.)
+      operationId: getSimilarPrograms
+      tags:
+        - programs
+      parameters:
+        - name: programId
+          in: path
+          description: Unique program identifier
+          required: true
+          schema:
+            type: string
+            example: p123456
+        - name: limit
+          in: query
+          description: Maximum number of results
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Program'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cast/{castMemberId}/programs:
+    get:
+      summary: Get programs by cast member
+      description: Retrieve all programs featuring a specific cast member
+      operationId: getProgramsByCastMember
+      tags:
+        - cast
+      parameters:
+        - name: castMemberId
+          in: path
+          description: Unique cast member identifier
+          required: true
+          schema:
+            type: string
+            example: c78910
+        - name: startTime
+          in: query
+          description: Filter programs from this time onwards
+          required: false
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  castMember:
+                    $ref: '#/components/schemas/CastMember'
+                  programs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Program'
+
+  /sync/changes:
+    get:
+      summary: Get incremental changes
+      description: |
+        Retrieve changes since last sync for efficient updates.
+        
+        **Use Case**: Mobile apps can sync only changed data instead of full refresh.
+        **Response**: Contains added, updated, and deleted items since `since` timestamp.
+      operationId: getSyncChanges
+      tags:
+        - sync
+      parameters:
+        - name: since
+          in: query
+          description: Timestamp of last sync (ISO 8601)
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: '2025-11-02T10:30:00Z'
+        - name: includePrograms
+          in: query
+          description: Include program changes
+          required: false
+          schema:
+            type: boolean
+            default: true
+        - name: includeChannels
+          in: query
+          description: Include channel changes
+          required: false
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    Channel:
+      type: object
+      required:
+        - id
+        - name
+        - logoUrl
+        - category
+        - number
+        - isActive
+      properties:
+        id:
+          type: string
+          example: ct1
+          description: Unique channel identifier
+        name:
+          type: string
+          example: ČT1
+          description: Channel display name
+        logoUrl:
+          type: string
+          format: uri
+          example: https://cdn.tvguide.cz/logos/ct1.png
+          description: Channel logo image URL
+        category:
+          $ref: '#/components/schemas/ChannelCategory'
+        number:
+          type: integer
+          example: 1
+          description: Channel number for sorting
+        description:
+          type: string
+          example: Hlavní program České televize
+          description: Channel description
+        languageCode:
+          type: string
+          pattern: '^[a-z]{2}$'
+          example: cs
+          description: ISO 639-1 language code
+        isHd:
+          type: boolean
+          example: true
+          description: HD quality indicator
+        isActive:
+          type: boolean
+          example: true
+          description: Whether channel is currently broadcasting
+        streamUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: Live stream URL (future feature)
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2025-11-02T12:00:00Z'
+          description: Last update timestamp
+
+    ChannelCategory:
+      type: string
+      enum:
+        - NATIONAL
+        - PRIVATE
+        - REGIONAL
+        - THEMATIC_MOVIES
+        - THEMATIC_SPORT
+        - THEMATIC_NEWS
+        - THEMATIC_KIDS
+        - THEMATIC_MUSIC
+        - THEMATIC_DOCUMENTARY
+        - THEMATIC_OTHER
+        - INTERNATIONAL
+
+    Program:
+      type: object
+      required:
+        - id
+        - channelId
+        - title
+        - startTime
+        - endTime
+        - type
+      properties:
+        id:
+          type: string
+          example: p123456
+          description: Unique program identifier
+        channelId:
+          type: string
+          example: ct1
+          description: Channel identifier
+        title:
+          type: string
+          example: Zprávy
+          description: Program title
+        subtitle:
+          type: string
+          nullable: true
+          example: Večerní vydání
+          description: Episode or subtitle
+        shortDescription:
+          type: string
+          maxLength: 200
+          example: Hlavní zpravodajský pořad České televize
+          description: Brief summary
+        description:
+          type: string
+          example: Večerní zpravodajský pořad s přehledem nejdůležitějších událostí dne z domova i ze zahraničí.
+          description: Full description
+        startTime:
+          type: string
+          format: date-time
+          example: '2025-11-02T19:00:00Z'
+          description: Program start time
+        endTime:
+          type: string
+          format: date-time
+          example: '2025-11-02T19:30:00Z'
+          description: Program end time
+        type:
+          $ref: '#/components/schemas/ProgramType'
+        imageUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: https://cdn.tvguide.cz/images/p123456.jpg
+          description: Program image/poster URL
+        rating:
+          $ref: '#/components/schemas/AgeRating'
+        isLive:
+          type: boolean
+          example: true
+          description: Live broadcast indicator
+        isRepeat:
+          type: boolean
+          example: false
+          description: Repeat/rerun indicator
+        isPremiere:
+          type: boolean
+          example: false
+          description: Premiere indicator
+        hasSubtitles:
+          type: boolean
+          example: true
+          description: Subtitle availability
+        hasAudioDescription:
+          type: boolean
+          example: false
+          description: Audio description for visually impaired
+        episodeNumber:
+          type: integer
+          nullable: true
+          example: 5
+          description: Episode number
+        seasonNumber:
+          type: integer
+          nullable: true
+          example: 2
+          description: Season number
+        totalEpisodes:
+          type: integer
+          nullable: true
+          example: 10
+          description: Total episodes in series
+        year:
+          type: integer
+          nullable: true
+          example: 2024
+          description: Production year
+        countryCode:
+          type: string
+          nullable: true
+          pattern: '^[A-Z]{2}$'
+          example: CZ
+          description: ISO 3166-1 alpha-2 country code
+        csfdUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: https://www.csfd.cz/film/123456
+          description: ČSFD.cz URL
+        imdbUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: https://www.imdb.com/title/tt1234567
+          description: IMDB.com URL
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2025-11-02T12:00:00Z'
+
+    ProgramDetail:
+      allOf:
+        - $ref: '#/components/schemas/Program'
+        - type: object
+          properties:
+            cast:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProgramCastMember'
+              description: Cast and crew (included if requested)
+
+    ProgramType:
+      type: string
+      enum:
+        - MOVIE
+        - SERIES
+        - NEWS
+        - SPORT
+        - DOCUMENTARY
+        - ENTERTAINMENT
+        - KIDS
+        - MUSIC
+        - TALK_SHOW
+        - REALITY_SHOW
+        - EDUCATION
+        - OTHER
+
+    AgeRating:
+      type: string
+      enum:
+        - ALL
+        - TWELVE
+        - FIFTEEN
+        - EIGHTEEN
+
+    CastMember:
+      type: object
+      required:
+        - id
+        - name
+        - role
+      properties:
+        id:
+          type: string
+          example: c78910
+          description: Unique cast member identifier
+        name:
+          type: string
+          example: Jan Novák
+          description: Full name
+        role:
+          $ref: '#/components/schemas/CastRole'
+        photoUrl:
+          type: string
+          format: uri
+          nullable: true
+          example: https://cdn.tvguide.cz/photos/c78910.jpg
+          description: Photo URL
+        biography:
+          type: string
+          nullable: true
+          description: Short biography
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          example: '1980-05-15'
+          description: Date of birth
+        nationality:
+          type: string
+          nullable: true
+          example: Czech
+          description: Nationality
+        imdbUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: IMDB profile URL
+        csfdUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: ČSFD profile URL
+
+    ProgramCastMember:
+      allOf:
+        - $ref: '#/components/schemas/CastMember'
+        - type: object
+          properties:
+            characterName:
+              type: string
+              nullable: true
+              example: Detective Novák
+              description: Character name (for actors)
+            order:
+              type: integer
+              example: 1
+              description: Display order
+
+    CastRole:
+      type: string
+      enum:
+        - ACTOR
+        - DIRECTOR
+        - WRITER
+        - PRODUCER
+        - CINEMATOGRAPHER
+        - COMPOSER
+        - EDITOR
+        - OTHER
+
+    SyncResponse:
+      type: object
+      required:
+        - timestamp
+        - hasMore
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-11-02T15:30:00Z'
+          description: Server timestamp for this sync
+        hasMore:
+          type: boolean
+          example: false
+          description: Whether more changes exist beyond this response
+        channels:
+          type: object
+          properties:
+            added:
+              type: array
+              items:
+                $ref: '#/components/schemas/Channel'
+            updated:
+              type: array
+              items:
+                $ref: '#/components/schemas/Channel'
+            deleted:
+              type: array
+              items:
+                type: string
+              description: IDs of deleted channels
+        programs:
+          type: object
+          properties:
+            added:
+              type: array
+              items:
+                $ref: '#/components/schemas/Program'
+            updated:
+              type: array
+              items:
+                $ref: '#/components/schemas/Program'
+            deleted:
+              type: array
+              items:
+                type: string
+              description: IDs of deleted programs
+
+    Pagination:
+      type: object
+      required:
+        - limit
+        - offset
+        - total
+      properties:
+        limit:
+          type: integer
+          example: 100
+          description: Number of items per page
+        offset:
+          type: integer
+          example: 0
+          description: Pagination offset
+        total:
+          type: integer
+          example: 250
+          description: Total number of items
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          example: INVALID_PARAMETER
+          description: Error code
+        message:
+          type: string
+          example: Invalid time range
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INVALID_PARAMETER
+            message: Invalid time range
+            details:
+              parameter: endTime
+              reason: Must be after startTime
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHORIZED
+            message: Invalid API key
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Program not found
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          description: Request limit per window
+          schema:
+            type: integer
+            example: 100
+        X-RateLimit-Remaining:
+          description: Requests remaining in current window
+          schema:
+            type: integer
+            example: 0
+        X-RateLimit-Reset:
+          description: Time when rate limit resets (Unix timestamp)
+          schema:
+            type: integer
+            example: 1698933600
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: RATE_LIMIT_EXCEEDED
+            message: Too many requests
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_ERROR
+            message: An unexpected error occurred
