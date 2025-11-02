@@ -23,3 +23,20 @@
     - přizůsobení položek v navigačním panelu
     - volitelná možnost přihlášení - záloha nastavení, synchronizace nastavení
     - i přes pokročilé funkce jednoduché a přehledné UX pro začátečníky
+
+/speckit.plan
+ - Cílem první fáze je vytvořit funkční prototyp aplikace, bez reálného napojení na API
+ - Všechna demo data v aplikaci budou mockována na repository úrovni (s použítím Kotlin DSL, simulace prodlevy download/načení z DB)
+ - Navrhnout navigaci, rozložení obrazovek
+ - naplánuj to do několika iterací, nejprve scafold, základní bottom navigaci, actionbar (nastavení, účet)
+ - pak jednotlivé obrazovky hrubé rozpoložení
+ - pak jednotlivé obrazovky detaily
+ - všechny obrazovky navrhni z ohledem na adaptivní layout, tedy aby byly řešené i velké obrazovky
+		 - epg bude detail otvírat do side panelu
+		 - v listovém výpise bude více dnů najednou, atd.
+ - zatim přeskočíme widgety, notifikace, shortcuty
+ - použité tecnologi: Kotlin Multiplatform, Compose, Material Design, Adaptive Layout, Metro DI (https://github.com/ZacSweers/metro), Ktor, Voyager navigace (https://github.com/adrielcafe/voyager), předpokládaný přechod na Navigation 3 až výjde, pokud přinese výhody před Voyager
+ - Pro EPG mřížku se použije https://github.com/oleksandrbalan/programguide - možná bude nutný fork
+ - Pro logování https://github.com/touchlab/Kermit
+ - Room pro offline data
+ - Vyber nejlepší řešení pro Image Loading
