@@ -9,9 +9,11 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
@@ -104,7 +106,79 @@ private fun ListScreenContent(
     onProgramClick: (Program) -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val adaptiveInfo = currentWindowAdaptiveInfo()
+    val isCompact = adaptiveInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
     
+    if (isCompact) {
+        // Phone layout: ViewPager with horizontal swipe
+        CompactListLayout(
+            days = days,
+            selectedDay = selectedDay,
+            today = today,
+            screenModel = screenModel,
+            onDaySelected = onDaySelected,
+            onChannelFilterClick = onChannelFilterClick,
+            onClearFilter = onClearFilter,
+            onProgramClick = onProgramClick
+        )
+    } else {
+        // Tablet/Desktop layout: Multi-column view showing multiple days
+        MultiDayLayout(
+            days = days,
+            selectedDay = selectedDay,
+            today = today,
+            screenModel = screenModel,
+            adaptiveInfo = adaptiveInfo,
+            onDaySelected = onDaySelected,
+            onChannelFilterClick = onChannelFilterClick,
+            onClearFilter = onClearFilter,
+            onProgramClick = onProgramClick
+        )
+    }
+}
+/**
+ * Tab řádek pro navigaci mezi dny
+ */
+@Composable
+private fun DayTabRow(
+    days: List<LocalDate>,
+    selectedDay: LocalDate,
+    today: LocalDate,
+    onDaySelected: (LocalDate) -> Unit
+) {
+    ScrollableTabRow(
+        selectedTabIndex = days.indexOf(selectedDay).coerceAtLeast(0),
+        edgePadding = 0.dp
+    ) {
+        days.forEach { day ->
+            Tab(
+                selected = selectedDay == day,
+                onClick = { onDaySelected(day) },
+                text = {
+                    Text(
+                        text = formatDayTabLabel(day, today),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
+            )
+        }
+    }
+}
+
+/**
+ * Compact layout for phones: ViewPager with horizontal day swipe
+ */
+@Composable
+private fun CompactListLayout(
+    days: List<LocalDate>,
+    selectedDay: LocalDate,
+    today: LocalDate,
+    screenModel: ListScreenModel,
+    onDaySelected: (LocalDate) -> Unit,
+    onChannelFilterClick: (String) -> Unit,
+    onClearFilter: () -> Unit,
+    onProgramClick: (Program) -> Unit
+) {
     val initialPage = days.indexOf(selectedDay).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
@@ -143,71 +217,150 @@ private fun ListScreenContent(
             beyondViewportPageCount = 2 // Předčíst 2 stránky dopředu a dozadu
         ) { page ->
             val dayForPage = days[page]
-            val state by screenModel.getStateForDay(dayForPage).collectAsState()
-            
-            when (state) {
-                is ListScreenState.Loading -> {
-                    LoadingIndicator(message = "Načítám programy...")
-                }
-                is ListScreenState.Success -> {
-                    val successState = state as ListScreenState.Success
-                    
-                    Column(modifier = Modifier.fillMaxSize()) {
-                        // Channel filter header (pokud je aktivní)
-                        if (successState.selectedChannelId != null) {
-                            ChannelFilterChip(
-                                channelName = successState.programs.firstOrNull()?.first?.name ?: "",
-                                onClear = onClearFilter,
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
-                        
-                        DayProgramList(
-                            programs = successState.programs,
-                            hasMore = successState.hasMore,
-                            onLoadMore = { screenModel.loadMore() },
-                            onProgramClick = onProgramClick,
-                            onChannelFilterClick = onChannelFilterClick
+            DayColumn(
+                day = dayForPage,
+                screenModel = screenModel,
+                onChannelFilterClick = onChannelFilterClick,
+                onClearFilter = onClearFilter,
+                onProgramClick = onProgramClick
+            )
+        }
+    }
+}
+
+/**
+ * Multi-day layout for tablets: 2-3 columns showing days side-by-side
+ */
+@Composable
+private fun MultiDayLayout(
+    days: List<LocalDate>,
+    selectedDay: LocalDate,
+    today: LocalDate,
+    screenModel: ListScreenModel,
+    adaptiveInfo: androidx.compose.material3.adaptive.WindowAdaptiveInfo,
+    onDaySelected: (LocalDate) -> Unit,
+    onChannelFilterClick: (String) -> Unit,
+    onClearFilter: () -> Unit,
+    onProgramClick: (Program) -> Unit
+) {
+    val columns = when (adaptiveInfo.windowSizeClass.windowWidthSizeClass) {
+        WindowWidthSizeClass.MEDIUM -> 2
+        WindowWidthSizeClass.EXPANDED -> 3
+        else -> 2
+    }
+    
+    // Get the days to show: selected day and next days
+    val visibleDays = remember(selectedDay, columns) {
+        val selectedIndex = days.indexOf(selectedDay).coerceAtLeast(0)
+        days.subList(selectedIndex, (selectedIndex + columns).coerceAtMost(days.size))
+    }
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
+    ) {
+        // Tab row for day selection
+        DayTabRow(
+            days = days,
+            selectedDay = selectedDay,
+            today = today,
+            onDaySelected = onDaySelected
+        )
+        
+        // Multi-column layout
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            visibleDays.forEach { day ->
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                ) {
+                    // Day header
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = if (day == selectedDay) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        tonalElevation = 2.dp
+                    ) {
+                        Text(
+                            text = formatDayTabLabel(day, today),
+                            style = MaterialTheme.typography.titleSmall,
+                            modifier = Modifier.padding(12.dp),
+                            color = if (day == selectedDay) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
-                }
-                is ListScreenState.Empty -> {
-                    EmptyState(message = (state as ListScreenState.Empty).message)
-                }
-                is ListScreenState.Error -> {
-                    ErrorState(
-                        message = (state as ListScreenState.Error).message,
-                        onRetry = { screenModel.refresh() }
+                    
+                    // Day content
+                    DayColumn(
+                        day = day,
+                        screenModel = screenModel,
+                        onChannelFilterClick = onChannelFilterClick,
+                        onClearFilter = onClearFilter,
+                        onProgramClick = onProgramClick
                     )
                 }
             }
         }
     }
 }
+
 /**
- * Tab řádek pro navigaci mezi dny
+ * Single day column content (shared by both compact and multi-day layouts)
  */
 @Composable
-private fun DayTabRow(
-    days: List<LocalDate>,
-    selectedDay: LocalDate,
-    today: LocalDate,
-    onDaySelected: (LocalDate) -> Unit
+private fun DayColumn(
+    day: LocalDate,
+    screenModel: ListScreenModel,
+    onChannelFilterClick: (String) -> Unit,
+    onClearFilter: () -> Unit,
+    onProgramClick: (Program) -> Unit
 ) {
-    ScrollableTabRow(
-        selectedTabIndex = days.indexOf(selectedDay).coerceAtLeast(0),
-        edgePadding = 0.dp
-    ) {
-        days.forEach { day ->
-            Tab(
-                selected = selectedDay == day,
-                onClick = { onDaySelected(day) },
-                text = {
-                    Text(
-                        text = formatDayTabLabel(day, today),
-                        style = MaterialTheme.typography.labelLarge
+    val state by screenModel.getStateForDay(day).collectAsState()
+    
+    when (state) {
+        is ListScreenState.Loading -> {
+            LoadingIndicator(message = "Načítám programy...")
+        }
+        is ListScreenState.Success -> {
+            val successState = state as ListScreenState.Success
+            
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Channel filter header (pokud je aktivní)
+                if (successState.selectedChannelId != null) {
+                    ChannelFilterChip(
+                        channelName = successState.programs.firstOrNull()?.first?.name ?: "",
+                        onClear = onClearFilter,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
+                
+                DayProgramList(
+                    programs = successState.programs,
+                    hasMore = successState.hasMore,
+                    onLoadMore = { screenModel.loadMore() },
+                    onProgramClick = onProgramClick,
+                    onChannelFilterClick = onChannelFilterClick
+                )
+            }
+        }
+        is ListScreenState.Empty -> {
+            EmptyState(message = (state as ListScreenState.Empty).message)
+        }
+        is ListScreenState.Error -> {
+            ErrorState(
+                message = (state as ListScreenState.Error).message,
+                onRetry = { screenModel.refresh() }
             )
         }
     }

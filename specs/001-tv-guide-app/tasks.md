@@ -226,8 +226,8 @@ Kotlin Multiplatform project structure:
 - [x] T110 [US4] Implement channel logo tap to filter by single channel
 - [x] T111 [US4] Add "All Channels" filter toggle
 - [x] T112 [US4] Implement infinite scroll to next day's programs
-- [x] T113 [US4] Add day separator headers
-- [ ] T114 [US4] Adaptive layout: multi-day view on tablets (2-3 columns)
+- [x] T113 [US4] Add day separator headers - REPLACED with ViewPager horizontal day navigation with tab row
+- [X] T114 [US4] Adaptive layout: multi-day view on tablets (2-3 columns)
 - [x] T115 [US5] Create CastMember and ProgramCast domain models in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/model/
 - [x] T116 [US5] Create GetProgramDetailsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetProgramDetailsUseCase.kt
 - [x] T117 [US5] Create GetSimilarProgramsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetSimilarProgramsUseCase.kt
