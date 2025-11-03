@@ -5,6 +5,9 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.repository.ChannelRepository
 import cz.myapp.tvguide.domain.repository.ProgramRepository
 import cz.myapp.tvguide.domain.repository.UserPreferencesRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Instant
@@ -52,16 +55,18 @@ class GetEpgDataUseCase(
             channelRepository.getAllChannels().first()
         }
         
-        // Get programs for each channel in the time range
-        val result = mutableMapOf<Channel, List<Program>>()
-        
-        for (channel in channels) {
-            val programs = programRepository
-                .getProgramsForChannel(channel.id, startTime, endTime)
-                .first()
-                .sortedBy { it.startTime }
-            
-            result[channel] = programs
+        // Get programs for each channel in the time range (parallel execution)
+        val result = coroutineScope {
+            channels.map { channel ->
+                async {
+                    val programs = programRepository
+                        .getProgramsForChannel(channel.id, startTime, endTime)
+                        .first()
+                        .sortedBy { it.startTime }
+                    
+                    channel to programs
+                }
+            }.awaitAll().toMap()
         }
         
         return result

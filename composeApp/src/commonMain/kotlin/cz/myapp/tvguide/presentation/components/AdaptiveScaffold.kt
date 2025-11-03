@@ -8,9 +8,12 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffoldDefaults
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteType
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.window.core.layout.WindowWidthSizeClass
-import cafe.adriel.voyager.navigator.tab.CurrentTab
 import cafe.adriel.voyager.navigator.tab.LocalTabNavigator
 import cafe.adriel.voyager.navigator.tab.Tab
 
@@ -30,6 +33,10 @@ fun AdaptiveScaffold(
 ) {
     val tabNavigator = LocalTabNavigator.current
     
+    // Remember the selected tab to avoid accessing tabNavigator.current
+    // which crashes when DetailScreen (non-Tab) is pushed onto navigator
+    var selectedTab by remember { mutableStateOf<Tab>(tabs.first()) }
+    
     // Use modern Material 3 Adaptive API
     val adaptiveInfo = currentWindowAdaptiveInfo()
     
@@ -44,11 +51,13 @@ fun AdaptiveScaffold(
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             tabs.forEach { tab ->
-                // Safe check: only compare if current is actually a Tab
-                val isSelected = (tabNavigator.current as? Tab) == tab
+                val isSelected = selectedTab == tab
                 item(
                     selected = isSelected,
-                    onClick = { tabNavigator.current = tab },
+                    onClick = { 
+                        selectedTab = tab
+                        tabNavigator.current = tab
+                    },
                     icon = {
                         tab.options.icon?.let { painter ->
                             Icon(
@@ -66,7 +75,8 @@ fun AdaptiveScaffold(
         layoutType = navigationSuiteType,
         modifier = modifier
     ) {
-        // Display current tab content
-        CurrentTab()
+        // Display selected tab content
+        // Note: Can't use CurrentTab() because it crashes when DetailScreen is on stack
+        selectedTab.Content()
     }
 }
