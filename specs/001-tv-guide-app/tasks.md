@@ -214,9 +214,11 @@ Kotlin Multiplatform project structure:
 
 ---
 
-## Phase 7: Iteration 5 - Chronological List & Detail (Week 5)
+## Phase 7: Iteration 5 - Chronological List & Detail (Week 5) ✅ 96% COMPLETE
 
 **Goal**: P2 User Stories 4 & 5 - List view and detailed program information
+
+**Status**: ✅ 27/28 tasks complete (T132 deferred to manual QA testing)
 
 **Independent Test**: Switch to List view, see all programs chronologically, filter by channel, scroll to tomorrow's schedule. Tap program to see full details with cast, ratings, similar content, external links.
 
@@ -246,10 +248,10 @@ Kotlin Multiplatform project structure:
 - [x] T126 [US5] Add ČSFD and IMDB rating section with external links
 - [x] T127 [US5] Implement similar content recommendations section
 - [X] T128 [US5] Add broadcast schedule across all channels
-- [ ] T129 [US5] Implement cast member tap navigation to their programs list
-- [ ] T130 [US5] Add favorite program toggle button
+- [x] T129 [US5] Implement cast member tap navigation to their programs list (commit 19145c9)
+- [x] T130 [US5] Add favorite program toggle button (commit b408e92)
 - [x] T131 [US5] Adaptive layout: scrollable column (Compact), two-column with sticky poster (Medium/Expanded)
-- [ ] T132 [US4] [US5] Test on all platforms
+- [ ] T132 [US4] [US5] Test on all platforms - DEFERRED (manual QA testing required)
 
 **Checkpoint**: User Stories 4 & 5 complete - users can browse lists and discover content
 
