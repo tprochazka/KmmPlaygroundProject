@@ -5,9 +5,10 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cz.myapp.tvguide.presentation.screens.ListScreen
+import cz.myapp.tvguide.presentation.screens.list.ListScreen
 
 /**
  * List tab - Shows searchable program/channel lists (US4)
@@ -31,6 +32,6 @@ object ListTab : Tab {
     
     @Composable
     override fun Content() {
-        ListScreen()
+        Navigator(ListScreen())
     }
 }

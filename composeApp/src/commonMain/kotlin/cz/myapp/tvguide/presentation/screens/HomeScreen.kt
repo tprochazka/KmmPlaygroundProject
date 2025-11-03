@@ -26,7 +26,9 @@ import cz.myapp.tvguide.presentation.screens.home.HomeScreenState
  * - Live indicator and progress bars
  */
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onProgramClick: (String) -> Unit = {}
+) {
     // Create screen model with dependencies
     val screenModel = remember {
         HomeScreenModel(
@@ -67,7 +69,7 @@ fun HomeScreen() {
                         channel = channel,
                         program = program,
                         onClick = {
-                            // TODO Phase 7: Navigate to program detail
+                            program?.let { onProgramClick(it.id) }
                         }
                     )
                 }

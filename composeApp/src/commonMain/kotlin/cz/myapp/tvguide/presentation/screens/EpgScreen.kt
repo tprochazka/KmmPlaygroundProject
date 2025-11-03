@@ -37,11 +37,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.presentation.components.ChannelLogo
 import cz.myapp.tvguide.presentation.components.EmptyState
 import cz.myapp.tvguide.presentation.components.EpgProgramItem
 import cz.myapp.tvguide.presentation.components.LoadingIndicator
+import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
 import cz.myapp.tvguide.presentation.screens.epg.EpgScreenModel
 import cz.myapp.tvguide.util.formatTime
 import kotlin.time.Duration.Companion.hours
@@ -53,6 +56,7 @@ object EpgScreen : Screen {
     
     @Composable
     override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
         val screenModel = rememberScreenModel { EpgScreenModel() }
         val state by screenModel.state.collectAsState()
         
@@ -125,7 +129,9 @@ object EpgScreen : Screen {
                     else -> {
                         EpgGrid(
                             state = state,
-                            onProgramClick = { screenModel.selectProgram(it) },
+                            onProgramClick = { program ->
+                                navigator.push(DetailScreen(program.id))
+                            },
                             modifier = Modifier.fillMaxSize()
                         )
                     }
