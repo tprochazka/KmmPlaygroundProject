@@ -133,7 +133,11 @@ private fun ProgramListContent(
         }
     }
     
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
+    ) {
         // Channel filter header
         if (selectedChannelId != null) {
             ChannelFilterChip(

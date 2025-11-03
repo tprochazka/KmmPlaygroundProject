@@ -56,7 +56,9 @@ fun HomeScreen(
         is HomeScreenState.Success -> {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.systemBars),
                 contentPadding = PaddingValues(16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)

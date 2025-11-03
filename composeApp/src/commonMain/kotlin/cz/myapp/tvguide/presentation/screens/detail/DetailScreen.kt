@@ -149,7 +149,9 @@ private fun CompactLayout(
     onCastMemberClick: (String) -> Unit
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -231,6 +233,7 @@ private fun TwoColumnLayout(
     Row(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(24.dp)
     ) {
