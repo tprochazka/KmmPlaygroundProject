@@ -10,11 +10,17 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cz.myapp.tvguide.di.DomainModule
 import cz.myapp.tvguide.domain.model.Channel
 import cz.myapp.tvguide.domain.model.Program
+import cz.myapp.tvguide.presentation.components.EmptyState
+import cz.myapp.tvguide.presentation.components.LoadingIndicator
+import cz.myapp.tvguide.presentation.components.ProgramListItem
+import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
 import cz.myapp.tvguide.presentation.components.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -33,7 +39,7 @@ class ListScreen : Screen {
     
     @Composable
     override fun Content() {
-        val navigator = LocalNavigator.current
+        val navigator = LocalNavigator.currentOrThrow
         
         // Create screen model with dependencies
         val screenModel = remember {
@@ -53,7 +59,7 @@ class ListScreen : Screen {
             },
             onClearFilter = { screenModel.clearChannelFilter() },
             onProgramClick = { program ->
-                // TODO Phase 7: Navigate to detail screen
+                navigator.push(DetailScreen(program.id))
             }
         )
     }

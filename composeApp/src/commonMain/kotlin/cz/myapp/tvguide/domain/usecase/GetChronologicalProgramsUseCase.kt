@@ -5,6 +5,9 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.repository.ChannelRepository
 import cz.myapp.tvguide.domain.repository.ProgramRepository
 import cz.myapp.tvguide.domain.repository.UserPreferencesRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -62,19 +65,21 @@ class GetChronologicalProgramsUseCase(
             }
         }
         
-        // Get programs for each channel
-        val allPrograms = mutableListOf<Pair<Channel, Program>>()
-        
-        channels.forEach { channel ->
-            val programs = programRepository.getProgramsByTimeRange(
-                channelId = channel.id,
-                startTime = actualStartTime,
-                endTime = actualEndTime
-            ).first()
-            
-            programs.forEach { program ->
-                allPrograms.add(channel to program)
-            }
+        // Get programs for each channel in parallel
+        val allPrograms = coroutineScope {
+            channels.map { channel ->
+                async {
+                    val programs = programRepository.getProgramsByTimeRange(
+                        channelId = channel.id,
+                        startTime = actualStartTime,
+                        endTime = actualEndTime
+                    ).first()
+                    
+                    programs.map { program ->
+                        channel to program
+                    }
+                }
+            }.awaitAll().flatten()
         }
         
         // Sort by start time
