@@ -265,19 +265,19 @@ Kotlin Multiplatform project structure:
 
 **Maps to**: User Story 10 - Theme & Navigation Customization, plus cross-cutting concerns
 
-- [ ] T133 [US10] Create GetUserPreferencesUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetUserPreferencesUseCase.kt
-- [ ] T134 [US10] Create UpdateUserPreferencesUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/UpdateUserPreferencesUseCase.kt
-- [ ] T135 [US10] Register use cases in DomainModule
-- [ ] T136 [US10] Create SettingsScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/settings/SettingsScreenModel.kt
-- [ ] T137 [US10] Implement SettingsScreen UI in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/settings/SettingsScreen.kt
-- [ ] T138 [US10] Add theme selection (Light/Dark/System Default)
-- [ ] T139 [US10] Add custom theme color pickers (primary/accent)
-- [ ] T140 [US10] Add navigation customization section
-- [ ] T141 [US10] Implement navigation item reordering
-- [ ] T142 [US10] Implement navigation item show/hide toggles
-- [ ] T143 [US10] Add time format preference (12h/24h)
-- [ ] T144 [US10] Add compact mode toggle
-- [ ] T145 [US10] Persist all settings changes
+- [x] T133 [US10] Create GetUserPreferencesUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetUserPreferencesUseCase.kt (commit e1c499e)
+- [x] T134 [US10] Create UpdateUserPreferencesUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/UpdateUserPreferencesUseCase.kt (commit e1c499e)
+- [x] T135 [US10] Register use cases in DomainModule (commit e1c499e)
+- [x] T136 [US10] Create SettingsScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/settings/SettingsScreenModel.kt (commit e1c499e)
+- [x] T137 [US10] Implement SettingsScreen UI in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/settings/SettingsScreen.kt (commit e1c499e)
+- [x] T138 [US10] Add theme selection (Light/Dark/System Default) - included in T137
+- [ ] T139 [US10] Add custom theme color pickers (primary/accent) - DEFERRED to Phase 2
+- [ ] T140 [US10] Add navigation customization section - DEFERRED to Phase 2
+- [ ] T141 [US10] Implement navigation item reordering - DEFERRED to Phase 2
+- [ ] T142 [US10] Implement navigation item show/hide toggles - DEFERRED to Phase 2
+- [x] T143 [US10] Add time format preference (12h/24h) - included in T137
+- [x] T144 [US10] Add compact mode toggle - included in T137
+- [x] T145 [US10] Persist all settings changes - automatic via UpdateUserPreferencesUseCase
 - [ ] T146 Add accessibility improvements (content descriptions, semantic properties)
 - [ ] T147 [P] Add loading error handling across all screens
 - [ ] T148 [P] Add empty state handling across all screens
