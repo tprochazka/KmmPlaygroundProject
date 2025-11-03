@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
@@ -24,6 +26,12 @@ import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
 import cz.myapp.tvguide.presentation.components.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 /**
  * List screen - Shows all programs chronologically (US4)
@@ -48,12 +56,32 @@ class ListScreen : Screen {
             )
         }
         
-        val state: ListScreenState by screenModel.state.collectAsState()
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         
+        // Vytvořit seznam dnů: 3 dny zpět, dnes, 7 dní dopředu
+        val days = remember(today) {
+            (-3..7).map { offset ->
+                today.plus(DatePeriod(days = offset))
+            }
+        }
+        
+        // Předčíst data pro všechny dny
+        LaunchedEffect(days) {
+            days.forEach { day ->
+                screenModel.preloadDay(day)
+            }
+        }
+        
+        val selectedDay = remember { mutableStateOf(screenModel.getSelectedDay()) }
+
         ListScreenContent(
-            state = state,
-            onRefresh = { screenModel.refresh() },
-            onLoadMore = { screenModel.loadMore() },
+            days = days,
+            selectedDay = selectedDay.value,
+            screenModel = screenModel,
+            onDaySelected = { day ->
+                selectedDay.value = day
+                screenModel.setSelectedDay(day)
+            },
             onChannelFilterClick = { channelId ->
                 screenModel.filterByChannel(channelId)
             },
@@ -67,54 +95,149 @@ class ListScreen : Screen {
 
 @Composable
 private fun ListScreenContent(
-    state: ListScreenState,
-    onRefresh: () -> Unit,
-    onLoadMore: () -> Unit,
+    days: List<LocalDate>,
+    selectedDay: LocalDate,
+    screenModel: ListScreenModel,
+    onDaySelected: (LocalDate) -> Unit,
     onChannelFilterClick: (String) -> Unit,
     onClearFilter: () -> Unit,
     onProgramClick: (Program) -> Unit
 ) {
-    when (state) {
-        is ListScreenState.Loading -> {
-            LoadingIndicator(message = "Načítám programy...")
+    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    
+    val initialPage = days.indexOf(selectedDay).coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
+    val coroutineScope = rememberCoroutineScope()
+    
+    // Synchronizovat pager s vybraným dnem
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage in days.indices) {
+            onDaySelected(days[pagerState.currentPage])
         }
+    }
+    
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
+    ) {
+        // Tab řádek pro navigaci mezi dny
+        DayTabRow(
+            days = days,
+            selectedDay = selectedDay,
+            today = today,
+            onDaySelected = { day ->
+                val pageIndex = days.indexOf(day)
+                if (pageIndex >= 0) {
+                    coroutineScope.launch {
+                        pagerState.animateScrollToPage(pageIndex)
+                    }
+                }
+            }
+        )
         
-        is ListScreenState.Success -> {
-            ProgramListContent(
-                programs = state.programs,
-                selectedChannelId = state.selectedChannelId,
-                hasMore = state.hasMore,
-                onRefresh = onRefresh,
-                onLoadMore = onLoadMore,
-                onChannelFilterClick = onChannelFilterClick,
-                onClearFilter = onClearFilter,
-                onProgramClick = onProgramClick
-            )
+        // Horizontální pager pro dny
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            beyondViewportPageCount = 2 // Předčíst 2 stránky dopředu a dozadu
+        ) { page ->
+            val dayForPage = days[page]
+            val state by screenModel.getStateForDay(dayForPage).collectAsState()
+            
+            when (state) {
+                is ListScreenState.Loading -> {
+                    LoadingIndicator(message = "Načítám programy...")
+                }
+                is ListScreenState.Success -> {
+                    val successState = state as ListScreenState.Success
+                    
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        // Channel filter header (pokud je aktivní)
+                        if (successState.selectedChannelId != null) {
+                            ChannelFilterChip(
+                                channelName = successState.programs.firstOrNull()?.first?.name ?: "",
+                                onClear = onClearFilter,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
+                        
+                        DayProgramList(
+                            programs = successState.programs,
+                            hasMore = successState.hasMore,
+                            onLoadMore = { screenModel.loadMore() },
+                            onProgramClick = onProgramClick,
+                            onChannelFilterClick = onChannelFilterClick
+                        )
+                    }
+                }
+                is ListScreenState.Empty -> {
+                    EmptyState(message = (state as ListScreenState.Empty).message)
+                }
+                is ListScreenState.Error -> {
+                    ErrorState(
+                        message = (state as ListScreenState.Error).message,
+                        onRetry = { screenModel.refresh() }
+                    )
+                }
+            }
         }
-        
-        is ListScreenState.Empty -> {
-            EmptyState(message = state.message)
-        }
-        
-        is ListScreenState.Error -> {
-            ErrorState(
-                message = state.message,
-                onRetry = onRefresh
+    }
+}
+/**
+ * Tab řádek pro navigaci mezi dny
+ */
+@Composable
+private fun DayTabRow(
+    days: List<LocalDate>,
+    selectedDay: LocalDate,
+    today: LocalDate,
+    onDaySelected: (LocalDate) -> Unit
+) {
+    ScrollableTabRow(
+        selectedTabIndex = days.indexOf(selectedDay).coerceAtLeast(0),
+        edgePadding = 0.dp
+    ) {
+        days.forEach { day ->
+            Tab(
+                selected = selectedDay == day,
+                onClick = { onDaySelected(day) },
+                text = {
+                    Text(
+                        text = formatDayTabLabel(day, today),
+                        style = MaterialTheme.typography.labelLarge
+                    )
+                }
             )
         }
     }
 }
 
+private fun formatDayTabLabel(day: LocalDate, today: LocalDate): String {
+    val yesterday = today.minus(DatePeriod(days = 1))
+    val tomorrow = today.plus(DatePeriod(days = 1))
+    
+    return when (day) {
+        today -> "Dnes, ${day.dayOfMonth}.${day.monthNumber}."
+        yesterday -> "Včera, ${day.dayOfMonth}.${day.monthNumber}."
+        tomorrow -> "Zítra, ${day.dayOfMonth}.${day.monthNumber}."
+        else -> {
+            // Formát: "4.11." nebo "15.11."
+            "${day.dayOfMonth}.${day.monthNumber}."
+        }
+    }
+}
+
+/**
+ * Seznam programů pro jeden den (bez day separators)
+ */
 @Composable
-private fun ProgramListContent(
+private fun DayProgramList(
     programs: List<Pair<Channel, Program>>,
-    selectedChannelId: String?,
     hasMore: Boolean,
-    onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
-    onChannelFilterClick: (String) -> Unit,
-    onClearFilter: () -> Unit,
-    onProgramClick: (Program) -> Unit
+    onProgramClick: (Program) -> Unit,
+    onChannelFilterClick: (String) -> Unit
 ) {
     val listState = rememberLazyListState()
     
@@ -133,63 +256,37 @@ private fun ProgramListContent(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
     ) {
-        // Channel filter header
-        if (selectedChannelId != null) {
-            ChannelFilterChip(
-                channelName = programs.firstOrNull()?.first?.name ?: "",
-                onClear = onClearFilter,
-                modifier = Modifier.padding(16.dp)
+        // Programy bez group by day (už máme tab navigaci)
+        items(
+            items = programs,
+            key = { (channel, program) -> "${channel.id}_${program.id}" }
+        ) { (channel, program) ->
+            ProgramListItem(
+                channel = channel,
+                program = program,
+                onClick = { onProgramClick(program) },
+                onChannelClick = { onChannelFilterClick(channel.id) }
             )
         }
         
-        // Program list
-        LazyColumn(
-            state = listState,
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 16.dp)
-        ) {
-            // Group programs by day
-            val programsByDay = programs.groupByDay()
-            
-            programsByDay.forEach { (date, dayPrograms) ->
-                // Day separator header
-                item(key = "header_$date") {
-                    DaySeparator(date = date)
-                }
-                
-                // Programs for this day
-                items(
-                    items = dayPrograms,
-                    key = { (channel, program) -> "${channel.id}_${program.id}" }
-                ) { (channel, program) ->
-                    ProgramListItem(
-                        channel = channel,
-                        program = program,
-                        onClick = { onProgramClick(program) },
-                        onChannelClick = { onChannelFilterClick(channel.id) }
-                    )
-                }
-            }
-            
-            // Loading more indicator
-            if (hasMore) {
-                item(key = "loading_more") {
-                    Box(
+        // Loading more indicator
+        if (hasMore) {
+            item(key = "loading_more") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    CircularProgressIndicator(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .align(androidx.compose.ui.Alignment.Center)
-                        )
-                    }
+                            .size(32.dp)
+                            .align(androidx.compose.ui.Alignment.Center)
+                    )
                 }
             }
         }
@@ -233,63 +330,5 @@ private fun ChannelFilterChip(
                 )
             }
         }
-    }
-}
-
-/**
- * Day separator header.
- */
-@Composable
-private fun DaySeparator(
-    date: String,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
-        Text(
-            text = date,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-        )
-    }
-}
-
-/**
- * Group programs by day for separator headers.
- */
-private fun List<Pair<Channel, Program>>.groupByDay(): Map<String, List<Pair<Channel, Program>>> {
-    return this.groupBy { (_, program) ->
-        val localDate = program.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
-        
-        // Format as "pondělí 15. dubna 2024"
-        val dayOfWeek = when (localDate.dayOfWeek) {
-            kotlinx.datetime.DayOfWeek.MONDAY -> "pondělí"
-            kotlinx.datetime.DayOfWeek.TUESDAY -> "úterý"
-            kotlinx.datetime.DayOfWeek.WEDNESDAY -> "středa"
-            kotlinx.datetime.DayOfWeek.THURSDAY -> "čtvrtek"
-            kotlinx.datetime.DayOfWeek.FRIDAY -> "pátek"
-            kotlinx.datetime.DayOfWeek.SATURDAY -> "sobota"
-            kotlinx.datetime.DayOfWeek.SUNDAY -> "neděle"
-        }
-        
-        val month = when (localDate.month) {
-            kotlinx.datetime.Month.JANUARY -> "ledna"
-            kotlinx.datetime.Month.FEBRUARY -> "února"
-            kotlinx.datetime.Month.MARCH -> "března"
-            kotlinx.datetime.Month.APRIL -> "dubna"
-            kotlinx.datetime.Month.MAY -> "května"
-            kotlinx.datetime.Month.JUNE -> "června"
-            kotlinx.datetime.Month.JULY -> "července"
-            kotlinx.datetime.Month.AUGUST -> "srpna"
-            kotlinx.datetime.Month.SEPTEMBER -> "září"
-            kotlinx.datetime.Month.OCTOBER -> "října"
-            kotlinx.datetime.Month.NOVEMBER -> "listopadu"
-            kotlinx.datetime.Month.DECEMBER -> "prosince"
-        }
-        
-        "$dayOfWeek ${localDate.day}. $month ${localDate.year}"
     }
 }

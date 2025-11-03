@@ -12,6 +12,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toInstant
+import kotlin.time.Duration.Companion.hours
 
 /**
  * Screen model for ListScreen.
@@ -27,57 +33,135 @@ import kotlin.time.Instant
 class ListScreenModel(
     private val getChronologicalProgramsUseCase: GetChronologicalProgramsUseCase
 ) : ScreenModel {
-    
     private val _state = MutableStateFlow<ListScreenState>(ListScreenState.Loading)
     val state: StateFlow<ListScreenState> = _state.asStateFlow()
-    
+
+    // Cache pro jednotlivé dny
+    private val dayStates = mutableMapOf<LocalDate, MutableStateFlow<ListScreenState>>()
+
     private var currentChannelFilter: String? = null
     private var lastProgramTime: Instant? = null
     private var isLoadingMore = false
-    
+
+    // Nový stav pro vybraný den
+    private var selectedDay: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
     init {
         loadPrograms()
     }
     
     /**
-     * Load initial programs.
+     * Load programs for selected day.
      */
     fun loadPrograms() {
+        loadProgramsForDay(selectedDay)
+    }
+    
+    /**
+     * Předčíst data pro konkrétní den
+     */
+    fun preloadDay(day: LocalDate) {
+        if (!dayStates.containsKey(day)) {
+            loadProgramsForDay(day)
+        }
+    }
+    
+    /**
+     * Získat state pro konkrétní den
+     */
+    fun getStateForDay(day: LocalDate): StateFlow<ListScreenState> {
+        // Pokud state pro den neexistuje, vytvoř ho a načti data
+        if (!dayStates.containsKey(day)) {
+            val newState = MutableStateFlow<ListScreenState>(ListScreenState.Loading)
+            dayStates[day] = newState
+            loadProgramsForDay(day)
+        }
+        
+        return dayStates[day]!!
+    }
+    
+    /**
+     * Načíst programy pro konkrétní den
+     */
+    private fun loadProgramsForDay(day: LocalDate) {
+        // Získat nebo vytvořit state pro den
+        val dayState = dayStates.getOrPut(day) {
+            MutableStateFlow(ListScreenState.Loading)
+        }
+        
+        // Pokud už se načítá nebo je načteno, nepokračuj
+        if (dayState.value is ListScreenState.Success || 
+            dayState.value is ListScreenState.Empty) {
+            return
+        }
+        
         screenModelScope.launch {
-            _state.value = ListScreenState.Loading
-            
+            dayState.value = ListScreenState.Loading
+
             try {
-                AppLogger.d("ListScreenModel") { "Loading chronological programs..." }
-                
+                AppLogger.d("ListScreenModel") { "Loading programs for $day..." }
+
+                // Vypočítat časový rozsah pro vybraný den
+                val startOfDay = LocalDateTime(day.year, day.month, day.dayOfMonth, 0, 0, 0)
+                    .toInstant(TimeZone.currentSystemDefault())
+                val endOfDay = startOfDay + 24.hours
+
                 val programs = getChronologicalProgramsUseCase(
+                    startTime = startOfDay,
+                    endTime = endOfDay,
                     channelId = currentChannelFilter,
                     useFavorites = false
                 )
-                
-                AppLogger.d("ListScreenModel") { "Loaded ${programs.size} programs" }
-                
+
+                AppLogger.d("ListScreenModel") { "Loaded ${programs.size} programs for $day" }
+
                 if (programs.isEmpty()) {
-                    _state.value = ListScreenState.Empty(message = "Žádné programy k zobrazení")
+                    dayState.value = ListScreenState.Empty(message = "Žádné programy k zobrazení")
                 } else {
-                    // Track last program time for pagination
-                    lastProgramTime = programs.lastOrNull()?.second?.endTime
-                    
-                    _state.value = ListScreenState.Success(
+                    dayState.value = ListScreenState.Success(
                         programs = programs,
                         selectedChannelId = currentChannelFilter,
-                        hasMore = true
+                        hasMore = false // Pro jeden den není infinite scroll
                     )
                 }
             } catch (e: Exception) {
-                AppLogger.e("ListScreenModel", e) { "Error loading programs" }
-                _state.value = ListScreenState.Error(
+                AppLogger.e("ListScreenModel", e) { "Error loading programs for $day" }
+                dayState.value = ListScreenState.Error(
                     message = e.message ?: "Nepodařilo se načíst programy"
                 )
+            }
+        }
+        
+        // Aktualizovat hlavní state pokud je to vybraný den
+        if (day == selectedDay) {
+            screenModelScope.launch {
+                dayState.collect { newState ->
+                    _state.value = newState
+                }
+            }
+        }
+    }
+    /**
+     * Změna vybraného dne a reload programů
+     */
+    fun setSelectedDay(day: LocalDate) {
+        if (selectedDay != day) {
+            selectedDay = day
+            
+            // Aktualizovat hlavní state
+            val dayState = dayStates[day]
+            if (dayState != null) {
+                _state.value = dayState.value
+            } else {
+                loadPrograms()
             }
         }
     }
     
     /**
+     * Vrací aktuálně vybraný den
+     */
+    fun getSelectedDay(): LocalDate = selectedDay    /**
      * Refresh programs (for pull-to-refresh).
      */
     fun refresh() {
