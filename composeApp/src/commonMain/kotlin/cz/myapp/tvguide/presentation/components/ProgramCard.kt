@@ -5,6 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.myapp.tvguide.domain.model.Channel
@@ -32,9 +34,26 @@ fun ProgramCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Build accessibility description
+    val timeZone = TimeZone.currentSystemDefault()
+    val accessibilityDescription = if (program != null) {
+        buildString {
+            append("Kanál ${channel.name}. ")
+            append("Aktuální pořad: ${program.title}. ")
+            append("Čas: ${program.startTime.formatTime(timeZone = timeZone)} až ${program.endTime.formatTime(timeZone = timeZone)}. ")
+            if (!program.description.isNullOrBlank()) {
+                append("Popis: ${program.description}")
+            }
+        }
+    } else {
+        "Kanál ${channel.name}. Žádný program momentálně nevysílá."
+    }
+    
     Card(
         onClick = onClick,
-        modifier = modifier
+        modifier = modifier.semantics {
+            contentDescription = accessibilityDescription
+        }
     ) {
         Column(
             modifier = Modifier
@@ -98,7 +117,6 @@ fun ProgramCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     
-                    val timeZone = TimeZone.currentSystemDefault()
                     Text(
                         text = "${program.startTime.formatTime(timeZone = timeZone)} - ${program.endTime.formatTime(timeZone = timeZone)}",
                         style = MaterialTheme.typography.bodySmall,

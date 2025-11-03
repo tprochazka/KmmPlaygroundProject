@@ -6,6 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -28,9 +30,21 @@ fun CastMemberCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Build accessibility description
+    val accessibilityDescription = buildString {
+        append("${member.role}: ${member.name}")
+        if (member.character != null) {
+            append(" jako ${member.character}")
+        }
+    }
+    
     Card(
         onClick = onClick,
-        modifier = modifier.width(120.dp)
+        modifier = modifier
+            .width(120.dp)
+            .semantics {
+                contentDescription = accessibilityDescription
+            }
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
