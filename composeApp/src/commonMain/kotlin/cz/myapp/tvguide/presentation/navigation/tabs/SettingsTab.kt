@@ -7,7 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
-import cz.myapp.tvguide.presentation.screens.SettingsScreen
+import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
 
 /**
  * Settings tab - Shows app settings and theme toggle (US10)
@@ -31,6 +31,6 @@ object SettingsTab : Tab {
     
     @Composable
     override fun Content() {
-        SettingsScreen()
+        SettingsScreen().Content()
     }
 }

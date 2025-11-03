@@ -9,7 +9,9 @@ import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
 import cz.myapp.tvguide.domain.usecase.GetProgramDetailsUseCase
 import cz.myapp.tvguide.domain.usecase.GetProgramsByCastMemberUseCase
 import cz.myapp.tvguide.domain.usecase.GetSimilarProgramsUseCase
+import cz.myapp.tvguide.domain.usecase.GetUserPreferencesUseCase
 import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
+import cz.myapp.tvguide.domain.usecase.UpdateUserPreferencesUseCase
 
 /**
  * Domain layer dependency container.
@@ -22,9 +24,7 @@ import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
  * - Phase 6 (US3): GetEpgDataUseCase ✅
  * - Phase 7 (US4): GetChronologicalProgramsUseCase ✅
  * - Phase 7 (US5): GetProgramDetailsUseCase, GetSimilarProgramsUseCase, GetProgramsByCastMemberUseCase ✅
- * 
- * Upcoming use cases:
- * - Phase 8 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase
+ * - Phase 8 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase ✅
  * 
  * Phase 1: Simple singleton pattern
  * Phase 2+: Migrate to Metro DI when dependency injection becomes more complex
@@ -135,6 +135,26 @@ object DomainModule {
         GetProgramsByCastMemberUseCase(
             programRepository = DataModule.programRepository,
             channelRepository = DataModule.channelRepository
+        )
+    }
+    
+    /**
+     * Use case to get user preferences.
+     * US10: Theme & Navigation Customization
+     */
+    val getUserPreferencesUseCase: GetUserPreferencesUseCase by lazy {
+        GetUserPreferencesUseCase(
+            userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to update user preferences.
+     * US10: Theme & Navigation Customization
+     */
+    val updateUserPreferencesUseCase: UpdateUserPreferencesUseCase by lazy {
+        UpdateUserPreferencesUseCase(
+            userPreferencesRepository = DataModule.userPreferencesRepository
         )
     }
 }

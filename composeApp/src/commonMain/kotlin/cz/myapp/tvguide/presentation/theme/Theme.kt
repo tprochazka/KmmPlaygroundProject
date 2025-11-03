@@ -81,13 +81,13 @@ private val DarkColorScheme = darkColorScheme(
 /**
  * Theme mode for the application.
  */
-enum class ThemeMode {
+enum class ThemeMode(val displayName: String, val description: String) {
     /** Follow system theme */
-    SYSTEM,
+    SYSTEM("Podle systému", "Automaticky podle nastavení zařízení"),
     /** Always use light theme */
-    LIGHT,
+    LIGHT("Světlý režim", "Vždy použít světlé téma"),
     /** Always use dark theme */
-    DARK
+    DARK("Tmavý režim", "Vždy použít tmavé téma")
 }
 
 /**
