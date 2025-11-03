@@ -31,6 +31,6 @@ object EpgTab : Tab {
     
     @Composable
     override fun Content() {
-        EpgScreen()
+        EpgScreen.Content()
     }
 }

@@ -3,6 +3,7 @@ package cz.myapp.tvguide.di
 import cz.myapp.tvguide.domain.usecase.CreateChannelListUseCase
 import cz.myapp.tvguide.domain.usecase.GetAllChannelsUseCase
 import cz.myapp.tvguide.domain.usecase.GetCurrentProgramsUseCase
+import cz.myapp.tvguide.domain.usecase.GetEpgDataUseCase
 import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
 import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
 
@@ -14,9 +15,9 @@ import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
  * Use cases implemented:
  * - Phase 4 (US1): GetCurrentProgramsUseCase, GetFavoriteChannelsUseCase ✅
  * - Phase 5 (US2): GetAllChannelsUseCase, UpdateFavoriteChannelsUseCase, CreateChannelListUseCase ✅
+ * - Phase 6 (US3): GetEpgDataUseCase ✅
  * 
  * Upcoming use cases:
- * - Phase 6 (US3): GetEpgDataUseCase
  * - Phase 7 (US4): GetChronologicalProgramsUseCase, SearchProgramsUseCase
  * - Phase 7 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase
  * - Phase 8 (US5): GetProgramDetailsUseCase, GetSimilarProgramsUseCase
@@ -74,6 +75,18 @@ object DomainModule {
      */
     val createChannelListUseCase: CreateChannelListUseCase by lazy {
         CreateChannelListUseCase(
+            userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to get EPG (Electronic Program Guide) data.
+     * US3: EPG Grid View
+     */
+    val getEpgDataUseCase: GetEpgDataUseCase by lazy {
+        GetEpgDataUseCase(
+            channelRepository = DataModule.channelRepository,
+            programRepository = DataModule.programRepository,
             userPreferencesRepository = DataModule.userPreferencesRepository
         )
     }
