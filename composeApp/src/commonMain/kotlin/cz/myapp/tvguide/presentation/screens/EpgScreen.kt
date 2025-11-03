@@ -13,8 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Star
@@ -153,62 +154,54 @@ private fun EpgGrid(
     
     // Shared horizontal scroll state for synchronized scrolling
     val horizontalScrollState = rememberScrollState()
-    // Shared vertical scroll state
-    val verticalScrollState = rememberScrollState()
     
-    Row(modifier = modifier) {
-        // Left column: Channel logos and names (fixed horizontally, scrolls vertically)
-        Column(
-            modifier = Modifier
-                .width(channelColumnWidth)
-                .fillMaxHeight()
-                .verticalScroll(verticalScrollState)
-        ) {
-            // Header spacer
+    Column(modifier = modifier) {
+        // Header row with time axis
+        Row(modifier = Modifier.fillMaxWidth()) {
+            // Left: Empty space for channel column header
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(channelColumnWidth)
                     .height(40.dp)
                     .background(MaterialTheme.colorScheme.surface)
             )
             
-            // Channel rows
-            state.channels.forEach { channel ->
-                ChannelRow(
-                    channel = channel,
-                    height = rowHeight
-                )
-            }
-        }
-        
-        // Right side: Time axis and program grid (scrollable both directions)
-        Column(
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f)
-        ) {
-            // Time axis header (scrolls horizontally with program grid)
+            // Right: Time axis header (scrolls horizontally)
             TimeAxisHeader(
                 timeSlots = state.getTimeSlots().take(24), // Show first 24 hours
                 pixelsPerHour = pixelsPerHour,
                 currentTime = state.currentTime,
-                scrollState = horizontalScrollState
+                scrollState = horizontalScrollState,
+                modifier = Modifier.weight(1f)
             )
-            
-            // Program grid (scrolls horizontally and vertically)
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(verticalScrollState)
-            ) {
-                state.channels.forEach { channel ->
+        }
+        
+        // Grid rows: Each row contains channel + programs (single LazyColumn for synchronized vertical scroll)
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(
+                items = state.channels,
+                key = { channel -> channel.id }
+            ) { channel ->
+                // Single row with channel logo + programs
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    // Left: Channel logo and name
+                    ChannelRow(
+                        channel = channel,
+                        height = rowHeight,
+                        modifier = Modifier.width(channelColumnWidth)
+                    )
+                    
+                    // Right: Program row
                     ProgramRow(
                         programs = state.epgData[channel] ?: emptyList(),
                         rowHeight = rowHeight,
                         pixelsPerHour = pixelsPerHour,
                         selectedProgram = state.selectedProgram,
                         onProgramClick = onProgramClick,
-                        scrollState = horizontalScrollState
+                        scrollState = horizontalScrollState,
+                        modifier = Modifier.weight(1f)
                     )
                 }
             }
