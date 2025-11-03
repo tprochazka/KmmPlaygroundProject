@@ -1,6 +1,7 @@
 package cz.myapp.tvguide.domain.repository
 
 import cz.myapp.tvguide.domain.model.Program
+import cz.myapp.tvguide.domain.model.ProgramCast
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Instant
 import kotlin.time.Clock
@@ -65,14 +66,6 @@ interface ProgramRepository {
     ): Flow<Map<String, List<Program>>>
     
     /**
-     * Get a single program by ID.
-     * 
-     * @param programId The program ID
-     * @return Flow of the program, or null if not found
-     */
-    fun getProgramById(programId: String): Flow<Program?>
-    
-    /**
      * Search programs by title.
      * 
      * @param query Search query (case-insensitive)
@@ -101,4 +94,52 @@ interface ProgramRepository {
         startTime: Instant,
         endTime: Instant
     ): Flow<List<Program>>
+    
+    /**
+     * Get programs by time range for a specific channel.
+     * 
+     * @param channelId The channel ID
+     * @param startTime Start of the time range
+     * @param endTime End of the time range
+     * @return Flow of programs in the time range
+     */
+    fun getProgramsByTimeRange(
+        channelId: String,
+        startTime: Instant,
+        endTime: Instant
+    ): Flow<List<Program>>
+    
+    /**
+     * Get cast and crew information for a program.
+     * 
+     * @param programId The program ID
+     * @return Program cast information (mock data in prototype phase)
+     */
+    suspend fun getProgramCast(programId: String): ProgramCast
+    
+    /**
+     * Get a single program by ID (suspend version).
+     * 
+     * @param programId The program ID
+     * @return The program, or null if not found
+     */
+    suspend fun getProgramById(programId: String): Program?
+    
+    /**
+     * Get similar programs based on genre, cast, or keywords.
+     * 
+     * @param programId The reference program ID
+     * @param limit Maximum number of similar programs to return
+     * @return List of similar programs
+     */
+    suspend fun getSimilarPrograms(programId: String, limit: Int): List<Program>
+    
+    /**
+     * Get programs featuring a specific cast member.
+     * 
+     * @param castMemberId The cast member ID
+     * @param limit Maximum number of programs to return
+     * @return List of programs featuring this cast member
+     */
+    suspend fun getProgramsByCastMember(castMemberId: String, limit: Int): List<Program>
 }

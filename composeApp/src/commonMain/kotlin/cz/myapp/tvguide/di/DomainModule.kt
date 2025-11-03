@@ -2,9 +2,13 @@ package cz.myapp.tvguide.di
 
 import cz.myapp.tvguide.domain.usecase.CreateChannelListUseCase
 import cz.myapp.tvguide.domain.usecase.GetAllChannelsUseCase
+import cz.myapp.tvguide.domain.usecase.GetChronologicalProgramsUseCase
 import cz.myapp.tvguide.domain.usecase.GetCurrentProgramsUseCase
 import cz.myapp.tvguide.domain.usecase.GetEpgDataUseCase
 import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
+import cz.myapp.tvguide.domain.usecase.GetProgramDetailsUseCase
+import cz.myapp.tvguide.domain.usecase.GetProgramsByCastMemberUseCase
+import cz.myapp.tvguide.domain.usecase.GetSimilarProgramsUseCase
 import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
 
 /**
@@ -16,11 +20,11 @@ import cz.myapp.tvguide.domain.usecase.UpdateFavoriteChannelsUseCase
  * - Phase 4 (US1): GetCurrentProgramsUseCase, GetFavoriteChannelsUseCase ✅
  * - Phase 5 (US2): GetAllChannelsUseCase, UpdateFavoriteChannelsUseCase, CreateChannelListUseCase ✅
  * - Phase 6 (US3): GetEpgDataUseCase ✅
+ * - Phase 7 (US4): GetChronologicalProgramsUseCase ✅
+ * - Phase 7 (US5): GetProgramDetailsUseCase, GetSimilarProgramsUseCase, GetProgramsByCastMemberUseCase ✅
  * 
  * Upcoming use cases:
- * - Phase 7 (US4): GetChronologicalProgramsUseCase, SearchProgramsUseCase
- * - Phase 7 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase
- * - Phase 8 (US5): GetProgramDetailsUseCase, GetSimilarProgramsUseCase
+ * - Phase 8 (US10): GetUserPreferencesUseCase, UpdateUserPreferencesUseCase
  * 
  * Phase 1: Simple singleton pattern
  * Phase 2+: Migrate to Metro DI when dependency injection becomes more complex
@@ -88,6 +92,49 @@ object DomainModule {
             channelRepository = DataModule.channelRepository,
             programRepository = DataModule.programRepository,
             userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to get programs in chronological order.
+     * US4: Chronological List View
+     */
+    val getChronologicalProgramsUseCase: GetChronologicalProgramsUseCase by lazy {
+        GetChronologicalProgramsUseCase(
+            programRepository = DataModule.programRepository,
+            channelRepository = DataModule.channelRepository,
+            userPreferencesRepository = DataModule.userPreferencesRepository
+        )
+    }
+    
+    /**
+     * Use case to get detailed program information with cast.
+     * US5: Program Details
+     */
+    val getProgramDetailsUseCase: GetProgramDetailsUseCase by lazy {
+        GetProgramDetailsUseCase(
+            programRepository = DataModule.programRepository
+        )
+    }
+    
+    /**
+     * Use case to get similar programs recommendations.
+     * US5: Program Details
+     */
+    val getSimilarProgramsUseCase: GetSimilarProgramsUseCase by lazy {
+        GetSimilarProgramsUseCase(
+            programRepository = DataModule.programRepository
+        )
+    }
+    
+    /**
+     * Use case to get programs by cast member.
+     * US5: Program Details
+     */
+    val getProgramsByCastMemberUseCase: GetProgramsByCastMemberUseCase by lazy {
+        GetProgramsByCastMemberUseCase(
+            programRepository = DataModule.programRepository,
+            channelRepository = DataModule.channelRepository
         )
     }
 }

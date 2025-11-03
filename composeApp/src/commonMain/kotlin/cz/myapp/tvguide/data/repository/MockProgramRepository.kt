@@ -2,7 +2,9 @@ package cz.myapp.tvguide.data.repository
 
 import cz.myapp.tvguide.data.mock.DelaySimulator
 import cz.myapp.tvguide.data.mock.MockPrograms
+import cz.myapp.tvguide.domain.model.CastMember
 import cz.myapp.tvguide.domain.model.Program
+import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.domain.repository.ProgramRepository
 import cz.myapp.tvguide.util.AppLogger
 import kotlinx.coroutines.flow.Flow
@@ -92,15 +94,6 @@ class MockProgramRepository : ProgramRepository {
         emit(epgMap)
     }
     
-    override fun getProgramById(programId: String): Flow<Program?> = flow {
-        AppLogger.d(tag) { "getProgramById: programId=$programId" }
-        DelaySimulator.fastDelay()
-        
-        val program = MockPrograms.all.find { it.id == programId }
-        AppLogger.d(tag) { "getProgramById: Found program: ${program?.title}" }
-        emit(program)
-    }
-    
     override fun searchPrograms(
         query: String,
         startTime: Instant?,
@@ -150,5 +143,100 @@ class MockProgramRepository : ProgramRepository {
         
         AppLogger.d(tag) { "getProgramsChronologically: Returning ${programs.size} programs" }
         emit(programs)
+    }
+    
+    override fun getProgramsByTimeRange(
+        channelId: String,
+        startTime: Instant,
+        endTime: Instant
+    ): Flow<List<Program>> = flow {
+        AppLogger.d(tag) { "getProgramsByTimeRange: channelId=$channelId, range=$startTime to $endTime" }
+        DelaySimulator.randomDelay()
+        
+        val programs = MockPrograms.all.filter { program ->
+            program.channelId == channelId &&
+            program.startTime < endTime &&
+            program.endTime > startTime
+        }.sortedBy { it.startTime }
+        
+        AppLogger.d(tag) { "getProgramsByTimeRange: Returning ${programs.size} programs" }
+        emit(programs)
+    }
+    
+    override suspend fun getProgramCast(programId: String): ProgramCast {
+        AppLogger.d(tag) { "getProgramCast: programId=$programId" }
+        DelaySimulator.fastDelay()
+        
+        // Mock cast data - in real implementation, this would come from API
+        val mockCast = listOf(
+            CastMember(
+                id = "cast_1",
+                name = "Jan Novák",
+                role = "Actor",
+                character = "Hlavní role",
+                photoUrl = "https://via.placeholder.com/150"
+            ),
+            CastMember(
+                id = "cast_2",
+                name = "Eva Nová",
+                role = "Actor",
+                character = "Vedlejší role",
+                photoUrl = "https://via.placeholder.com/150"
+            )
+        )
+        
+        val mockDirector = CastMember(
+            id = "dir_1",
+            name = "Pavel Svoboda",
+            role = "Director",
+            photoUrl = "https://via.placeholder.com/150"
+        )
+        
+        return ProgramCast(
+            programId = programId,
+            cast = mockCast,
+            directors = listOf(mockDirector)
+        )
+    }
+    
+    override suspend fun getProgramById(programId: String): Program? {
+        AppLogger.d(tag) { "getProgramById (suspend): programId=$programId" }
+        DelaySimulator.fastDelay()
+        
+        val program = MockPrograms.all.find { it.id == programId }
+        AppLogger.d(tag) { "getProgramById (suspend): Found program: ${program?.title}" }
+        return program
+    }
+    
+    override suspend fun getSimilarPrograms(programId: String, limit: Int): List<Program> {
+        AppLogger.d(tag) { "getSimilarPrograms: programId=$programId, limit=$limit" }
+        DelaySimulator.randomDelay()
+        
+        val program = MockPrograms.all.find { it.id == programId }
+        if (program == null) {
+            AppLogger.d(tag) { "getSimilarPrograms: Program not found" }
+            return emptyList()
+        }
+        
+        // Find similar programs by matching genres
+        val similar = MockPrograms.all.filter { other ->
+            other.id != programId &&
+            other.genres.any { genre -> genre in program.genres }
+        }.take(limit)
+        
+        AppLogger.d(tag) { "getSimilarPrograms: Returning ${similar.size} similar programs" }
+        return similar
+    }
+    
+    override suspend fun getProgramsByCastMember(castMemberId: String, limit: Int): List<Program> {
+        AppLogger.d(tag) { "getProgramsByCastMember: castMemberId=$castMemberId, limit=$limit" }
+        DelaySimulator.randomDelay()
+        
+        // Mock implementation - in real app would filter by cast member ID
+        // For prototype, just return some random programs
+        val programs = MockPrograms.all.shuffled().take(limit)
+        
+        AppLogger.d(tag) { "getProgramsByCastMember: Returning ${programs.size} programs" }
+        return programs
     }
 }
