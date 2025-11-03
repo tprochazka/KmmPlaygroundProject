@@ -290,6 +290,10 @@ private fun ProgramRow(
     scrollState: ScrollState,
     modifier: Modifier = Modifier
 ) {
+    // Note: We can't use LazyRow with external ScrollState for synchronization
+    // This is a known limitation - LazyRow manages its own scroll state
+    // For now, keeping Row + forEach for synchronized horizontal scrolling
+    // Future optimization: Consider custom layout or different approach
     Row(
         modifier = modifier
             .fillMaxWidth()

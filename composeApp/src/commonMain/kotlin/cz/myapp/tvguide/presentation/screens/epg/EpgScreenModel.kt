@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
 
 /**
@@ -45,7 +46,9 @@ class EpgScreenModel(
             
             try {
                 val now = Clock.System.now()
-                val endTime = now + 7.days
+                // EPG grid: Load only 12 hours of programs for better performance
+                // (7 days was too much data to render smoothly)
+                val endTime = now + 12.hours
                 
                 val epgData = getEpgDataUseCase(
                     startTime = now,
