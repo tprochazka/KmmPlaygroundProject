@@ -218,33 +218,33 @@ Kotlin Multiplatform project structure:
 
 **Maps to**: User Story 4 - Chronological List View, User Story 5 - Program Details & Discovery
 
-- [ ] T105 [US4] Create GetChronologicalProgramsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetChronologicalProgramsUseCase.kt
-- [ ] T106 [US4] Register use case in DomainModule
-- [ ] T107 [US4] Create ListScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/list/ListScreenModel.kt
-- [ ] T108 [US4] Implement ListScreen UI with LazyColumn in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/list/ListScreen.kt
-- [ ] T109 [US4] Create ProgramListItem component in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/components/ProgramListItem.kt
-- [ ] T110 [US4] Implement channel logo tap to filter by single channel
-- [ ] T111 [US4] Add "All Channels" filter toggle
-- [ ] T112 [US4] Implement infinite scroll to next day's programs
-- [ ] T113 [US4] Add day separator headers
+- [x] T105 [US4] Create GetChronologicalProgramsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetChronologicalProgramsUseCase.kt
+- [x] T106 [US4] Register use case in DomainModule
+- [x] T107 [US4] Create ListScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/list/ListScreenModel.kt
+- [x] T108 [US4] Implement ListScreen UI with LazyColumn in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/list/ListScreen.kt
+- [x] T109 [US4] Create ProgramListItem component in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/components/ProgramListItem.kt
+- [x] T110 [US4] Implement channel logo tap to filter by single channel
+- [x] T111 [US4] Add "All Channels" filter toggle
+- [x] T112 [US4] Implement infinite scroll to next day's programs
+- [x] T113 [US4] Add day separator headers
 - [ ] T114 [US4] Adaptive layout: multi-day view on tablets (2-3 columns)
-- [ ] T115 [US5] Create CastMember and ProgramCast domain models in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/model/
-- [ ] T116 [US5] Create GetProgramDetailsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetProgramDetailsUseCase.kt
-- [ ] T117 [US5] Create GetSimilarProgramsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetSimilarProgramsUseCase.kt
-- [ ] T118 [US5] Create GetProgramsByCastMemberUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetProgramsByCastMemberUseCase.kt
-- [ ] T119 [US5] Register use cases in DomainModule
-- [ ] T120 [US5] Create DetailScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/detail/DetailScreenModel.kt
-- [ ] T121 [US5] Implement DetailScreen UI in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/detail/DetailScreen.kt
-- [ ] T122 [US5] Create CastMemberCard component in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/components/CastMemberCard.kt
-- [ ] T123 [US5] Display program poster image with Coil
-- [ ] T124 [US5] Display title, description, genre, duration, age rating
-- [ ] T125 [US5] Display cast and crew section with photos
-- [ ] T126 [US5] Add ČSFD and IMDB rating section with external links
-- [ ] T127 [US5] Implement similar content recommendations section
+- [x] T115 [US5] Create CastMember and ProgramCast domain models in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/model/
+- [x] T116 [US5] Create GetProgramDetailsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetProgramDetailsUseCase.kt
+- [x] T117 [US5] Create GetSimilarProgramsUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetSimilarProgramsUseCase.kt
+- [x] T118 [US5] Create GetProgramsByCastMemberUseCase in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/domain/usecase/GetProgramsByCastMemberUseCase.kt
+- [x] T119 [US5] Register use cases in DomainModule
+- [x] T120 [US5] Create DetailScreenModel in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/detail/DetailScreenModel.kt
+- [x] T121 [US5] Implement DetailScreen UI in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/screens/detail/DetailScreen.kt
+- [x] T122 [US5] Create CastMemberCard component in composeApp/src/commonMain/kotlin/cz/myapp/tvguide/presentation/components/CastMemberCard.kt
+- [x] T123 [US5] Display program poster image with Coil
+- [x] T124 [US5] Display title, description, genre, duration, age rating
+- [x] T125 [US5] Display cast and crew section with photos
+- [x] T126 [US5] Add ČSFD and IMDB rating section with external links
+- [x] T127 [US5] Implement similar content recommendations section
 - [ ] T128 [US5] Add broadcast schedule across all channels
 - [ ] T129 [US5] Implement cast member tap navigation to their programs list
 - [ ] T130 [US5] Add favorite program toggle button
-- [ ] T131 [US5] Adaptive layout: scrollable column (Compact), two-column with sticky poster (Medium/Expanded)
+- [x] T131 [US5] Adaptive layout: scrollable column (Compact), two-column with sticky poster (Medium/Expanded)
 - [ ] T132 [US4] [US5] Test on all platforms
 
 **Checkpoint**: User Stories 4 & 5 complete - users can browse lists and discover content
