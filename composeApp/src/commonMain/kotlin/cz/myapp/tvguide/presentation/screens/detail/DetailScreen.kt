@@ -4,6 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
@@ -52,15 +55,19 @@ data class DetailScreen(
                 getProgramDetailsUseCase = DomainModule.getProgramDetailsUseCase,
                 getSimilarProgramsUseCase = DomainModule.getSimilarProgramsUseCase,
                 channelRepository = cz.myapp.tvguide.di.DataModule.channelRepository,
-                programRepository = cz.myapp.tvguide.di.DataModule.programRepository
+                programRepository = cz.myapp.tvguide.di.DataModule.programRepository,
+                userPreferencesRepository = cz.myapp.tvguide.di.DataModule.userPreferencesRepository
             )
         }
         
         val state: DetailScreenState by screenModel.state.collectAsState()
+        val isFavorite: Boolean by screenModel.isFavorite.collectAsState()
         
         DetailScreenContent(
             state = state,
+            isFavorite = isFavorite,
             onRefresh = { screenModel.refresh() },
+            onToggleFavorite = { screenModel.toggleFavorite() },
             onSimilarProgramClick = { program ->
                 // Navigate to detail of similar program
                 navigator?.push(DetailScreen(program.id))
@@ -80,7 +87,9 @@ data class DetailScreen(
 @Composable
 private fun DetailScreenContent(
     state: DetailScreenState,
+    isFavorite: Boolean,
     onRefresh: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit,
     onBack: () -> Unit
@@ -96,7 +105,9 @@ private fun DetailScreenContent(
                 cast = state.cast,
                 similarPrograms = state.similarPrograms,
                 broadcastSchedule = state.broadcastSchedule,
+                isFavorite = isFavorite,
                 onRefresh = onRefresh,
+                onToggleFavorite = onToggleFavorite,
                 onSimilarProgramClick = onSimilarProgramClick,
                 onCastMemberClick = onCastMemberClick
             )
@@ -118,7 +129,9 @@ private fun ProgramDetailContent(
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    isFavorite: Boolean,
     onRefresh: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit
 ) {
@@ -133,7 +146,9 @@ private fun ProgramDetailContent(
             cast = cast,
             similarPrograms = similarPrograms,
             broadcastSchedule = broadcastSchedule,
+            isFavorite = isFavorite,
             onRefresh = onRefresh,
+            onToggleFavorite = onToggleFavorite,
             onSimilarProgramClick = onSimilarProgramClick,
             onCastMemberClick = onCastMemberClick
         )
@@ -144,7 +159,9 @@ private fun ProgramDetailContent(
             cast = cast,
             similarPrograms = similarPrograms,
             broadcastSchedule = broadcastSchedule,
+            isFavorite = isFavorite,
             onRefresh = onRefresh,
+            onToggleFavorite = onToggleFavorite,
             onSimilarProgramClick = onSimilarProgramClick,
             onCastMemberClick = onCastMemberClick
         )
@@ -160,7 +177,9 @@ private fun CompactLayout(
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    isFavorite: Boolean,
     onRefresh: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit
 ) {
@@ -186,7 +205,11 @@ private fun CompactLayout(
         
         // Title and metadata
         item {
-            ProgramHeader(program = program)
+            ProgramHeader(
+                program = program,
+                isFavorite = isFavorite,
+                onToggleFavorite = onToggleFavorite
+            )
         }
         
         // Description
@@ -261,7 +284,9 @@ private fun TwoColumnLayout(
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    isFavorite: Boolean,
     onRefresh: () -> Unit,
+    onToggleFavorite: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit
 ) {
@@ -290,7 +315,11 @@ private fun TwoColumnLayout(
         ) {
             // Title and metadata
             item {
-                ProgramHeader(program = program)
+                ProgramHeader(
+                    program = program,
+                    isFavorite = isFavorite,
+                    onToggleFavorite = onToggleFavorite
+                )
             }
             
             // Description
@@ -381,14 +410,44 @@ private fun ProgramPoster(
  */
 @Composable
 private fun ProgramHeader(
-    program: Program
+    program: Program,
+    isFavorite: Boolean,
+    onToggleFavorite: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Title
-        Text(
-            text = program.title,
-            style = MaterialTheme.typography.headlineMedium
-        )
+        // Title with favorite button
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+        ) {
+            Text(
+                text = program.title,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.weight(1f)
+            )
+            
+            // T130: Favorite toggle button
+            IconButton(onClick = onToggleFavorite) {
+                Icon(
+                    imageVector = if (isFavorite) {
+                        Icons.Default.Favorite
+                    } else {
+                        Icons.Default.FavoriteBorder
+                    },
+                    contentDescription = if (isFavorite) {
+                        "Odebrat z oblíbených"
+                    } else {
+                        "Přidat do oblíbených"
+                    },
+                    tint = if (isFavorite) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
         
         // Subtitle
         if (program.subtitle != null) {

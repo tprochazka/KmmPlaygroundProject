@@ -7,6 +7,7 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.domain.repository.ChannelRepository
 import cz.myapp.tvguide.domain.repository.ProgramRepository
+import cz.myapp.tvguide.domain.repository.UserPreferencesRepository
 import cz.myapp.tvguide.domain.usecase.GetProgramDetailsUseCase
 import cz.myapp.tvguide.domain.usecase.GetSimilarProgramsUseCase
 import cz.myapp.tvguide.util.AppLogger
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
  * Manages state for program detail view:
  * - Loading program details with cast/crew
  * - Loading similar programs with their channels
+ * - Favorite program toggle (T130)
  * - Handling loading/error states
  * 
  * US5: As a user, I want to see detailed information about a program.
@@ -31,14 +33,20 @@ class DetailScreenModel(
     private val getProgramDetailsUseCase: GetProgramDetailsUseCase,
     private val getSimilarProgramsUseCase: GetSimilarProgramsUseCase,
     private val channelRepository: ChannelRepository,
-    private val programRepository: ProgramRepository
+    private val programRepository: ProgramRepository,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : ScreenModel {
     
     private val _state = MutableStateFlow<DetailScreenState>(DetailScreenState.Loading)
     val state: StateFlow<DetailScreenState> = _state.asStateFlow()
     
+    // T130: Track if program is favorited
+    private val _isFavorite = MutableStateFlow(false)
+    val isFavorite: StateFlow<Boolean> = _isFavorite.asStateFlow()
+    
     init {
         loadProgramDetails()
+        loadFavoriteStatus()
     }
     
     /**
@@ -105,6 +113,33 @@ class DetailScreenModel(
                 _state.value = DetailScreenState.Error(
                     message = e.message ?: "Nepodařilo se načíst detail programu"
                 )
+            }
+        }
+    }
+    
+    /**
+     * Load favorite status for the current program (T130).
+     */
+    private fun loadFavoriteStatus() {
+        screenModelScope.launch {
+            userPreferencesRepository.isProgramFavorite(programId).collect { favorite ->
+                _isFavorite.value = favorite
+                AppLogger.d("DetailScreenModel") { "Program $programId favorite status: $favorite" }
+            }
+        }
+    }
+    
+    /**
+     * Toggle favorite status of the current program (T130).
+     */
+    fun toggleFavorite() {
+        screenModelScope.launch {
+            try {
+                val newStatus = userPreferencesRepository.toggleFavoriteProgram(programId)
+                AppLogger.i("DetailScreenModel") { "Program $programId favorite toggled to: $newStatus" }
+                // The flow will automatically update _isFavorite
+            } catch (e: Exception) {
+                AppLogger.e("DetailScreenModel", e) { "Error toggling favorite for program $programId" }
             }
         }
     }

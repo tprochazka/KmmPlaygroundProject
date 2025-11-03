@@ -30,6 +30,11 @@ class LocalUserPreferencesRepository : UserPreferencesRepository {
         )
     )
     
+    // T130: In-memory storage for favorite programs (Phase 1 prototype)
+    private val favoriteProgramsFlow = MutableStateFlow<Map<String, Set<String>>>(
+        emptyMap() // Map of userId to Set of programIds
+    )
+    
     override fun getUserPreferences(userId: String): Flow<UserPreferences> {
         AppLogger.d(tag) { "getUserPreferences: userId=$userId" }
         return preferencesFlow
@@ -129,5 +134,60 @@ class LocalUserPreferencesRepository : UserPreferencesRepository {
             createdAt = now
             updatedAt = now
         }
+    }
+    
+    // T130: Favorite Programs implementation (Phase 1 prototype)
+    
+    override fun getFavoritePrograms(userId: String): Flow<Set<String>> {
+        AppLogger.d(tag) { "getFavoritePrograms: userId=$userId" }
+        return favoriteProgramsFlow.map { it[userId] ?: emptySet() }
+    }
+    
+    override fun isProgramFavorite(programId: String, userId: String): Flow<Boolean> {
+        return favoriteProgramsFlow.map { map ->
+            map[userId]?.contains(programId) == true
+        }
+    }
+    
+    override suspend fun addFavoriteProgram(programId: String, userId: String) {
+        AppLogger.d(tag) { "addFavoriteProgram: programId=$programId, userId=$userId" }
+        DelaySimulator.fastDelay()
+        
+        val currentFavorites = favoriteProgramsFlow.value[userId] ?: emptySet()
+        val updatedFavorites = currentFavorites + programId
+        
+        favoriteProgramsFlow.value = favoriteProgramsFlow.value + (userId to updatedFavorites)
+        AppLogger.i(tag) { "Program $programId added to favorites for user $userId" }
+    }
+    
+    override suspend fun removeFavoriteProgram(programId: String, userId: String) {
+        AppLogger.d(tag) { "removeFavoriteProgram: programId=$programId, userId=$userId" }
+        DelaySimulator.fastDelay()
+        
+        val currentFavorites = favoriteProgramsFlow.value[userId] ?: emptySet()
+        val updatedFavorites = currentFavorites - programId
+        
+        favoriteProgramsFlow.value = favoriteProgramsFlow.value + (userId to updatedFavorites)
+        AppLogger.i(tag) { "Program $programId removed from favorites for user $userId" }
+    }
+    
+    override suspend fun toggleFavoriteProgram(programId: String, userId: String): Boolean {
+        AppLogger.d(tag) { "toggleFavoriteProgram: programId=$programId, userId=$userId" }
+        DelaySimulator.fastDelay()
+        
+        val currentFavorites = favoriteProgramsFlow.value[userId] ?: emptySet()
+        val isFavorite = currentFavorites.contains(programId)
+        
+        val updatedFavorites = if (isFavorite) {
+            currentFavorites - programId
+        } else {
+            currentFavorites + programId
+        }
+        
+        favoriteProgramsFlow.value = favoriteProgramsFlow.value + (userId to updatedFavorites)
+        
+        val newStatus = !isFavorite
+        AppLogger.i(tag) { "Program $programId favorite toggled to $newStatus for user $userId" }
+        return newStatus
     }
 }
