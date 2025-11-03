@@ -41,11 +41,18 @@ import kotlin.time.Clock
  * Features:
  * - Chronological list of all programs
  * - Channel filtering
+ * - Cast member filtering (T129)
  * - Day separator headers
  * - Infinite scroll pagination
  * - Pull-to-refresh
+ * 
+ * @param castMemberId Optional cast member ID to filter programs
+ * @param castMemberName Optional cast member name for display
  */
-class ListScreen : Screen {
+data class ListScreen(
+    val castMemberId: String? = null,
+    val castMemberName: String? = null
+) : Screen {
     
     @Composable
     override fun Content() {
@@ -54,7 +61,13 @@ class ListScreen : Screen {
         // Create screen model with dependencies
         val screenModel = remember {
             ListScreenModel(
-                getChronologicalProgramsUseCase = DomainModule.getChronologicalProgramsUseCase
+                getChronologicalProgramsUseCase = DomainModule.getChronologicalProgramsUseCase,
+                getProgramsByCastMemberUseCase = if (castMemberId != null) {
+                    DomainModule.getProgramsByCastMemberUseCase
+                } else {
+                    null
+                },
+                castMemberId = castMemberId
             )
         }
         
@@ -80,6 +93,7 @@ class ListScreen : Screen {
             days = days,
             selectedDay = selectedDay.value,
             screenModel = screenModel,
+            castMemberName = castMemberName,
             onDaySelected = { day ->
                 selectedDay.value = day
                 screenModel.setSelectedDay(day)
@@ -90,7 +104,8 @@ class ListScreen : Screen {
             onClearFilter = { screenModel.clearChannelFilter() },
             onProgramClick = { program ->
                 navigator.push(DetailScreen(program.id))
-            }
+            },
+            onBack = { navigator.pop() }
         )
     }
 }
@@ -100,10 +115,12 @@ private fun ListScreenContent(
     days: List<LocalDate>,
     selectedDay: LocalDate,
     screenModel: ListScreenModel,
+    castMemberName: String?,
     onDaySelected: (LocalDate) -> Unit,
     onChannelFilterClick: (String) -> Unit,
     onClearFilter: () -> Unit,
-    onProgramClick: (Program) -> Unit
+    onProgramClick: (Program) -> Unit,
+    onBack: () -> Unit
 ) {
     val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val adaptiveInfo = currentWindowAdaptiveInfo()
@@ -116,10 +133,12 @@ private fun ListScreenContent(
             selectedDay = selectedDay,
             today = today,
             screenModel = screenModel,
+            castMemberName = castMemberName,
             onDaySelected = onDaySelected,
             onChannelFilterClick = onChannelFilterClick,
             onClearFilter = onClearFilter,
-            onProgramClick = onProgramClick
+            onProgramClick = onProgramClick,
+            onBack = onBack
         )
     } else {
         // Tablet/Desktop layout: Multi-column view showing multiple days
@@ -129,10 +148,12 @@ private fun ListScreenContent(
             today = today,
             screenModel = screenModel,
             adaptiveInfo = adaptiveInfo,
+            castMemberName = castMemberName,
             onDaySelected = onDaySelected,
             onChannelFilterClick = onChannelFilterClick,
             onClearFilter = onClearFilter,
-            onProgramClick = onProgramClick
+            onProgramClick = onProgramClick,
+            onBack = onBack
         )
     }
 }
@@ -174,10 +195,12 @@ private fun CompactListLayout(
     selectedDay: LocalDate,
     today: LocalDate,
     screenModel: ListScreenModel,
+    castMemberName: String?,
     onDaySelected: (LocalDate) -> Unit,
     onChannelFilterClick: (String) -> Unit,
     onClearFilter: () -> Unit,
-    onProgramClick: (Program) -> Unit
+    onProgramClick: (Program) -> Unit,
+    onBack: () -> Unit
 ) {
     val initialPage = days.indexOf(selectedDay).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
@@ -195,6 +218,22 @@ private fun CompactListLayout(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
     ) {
+        // Cast member filter chip (if active)
+        if (castMemberName != null) {
+            FilterChip(
+                selected = true,
+                onClick = onBack,
+                label = { Text("Filtr: $castMemberName") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Zrušit filtr"
+                    )
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+        
         // Tab řádek pro navigaci mezi dny
         DayTabRow(
             days = days,
@@ -238,10 +277,12 @@ private fun MultiDayLayout(
     today: LocalDate,
     screenModel: ListScreenModel,
     adaptiveInfo: androidx.compose.material3.adaptive.WindowAdaptiveInfo,
+    castMemberName: String?,
     onDaySelected: (LocalDate) -> Unit,
     onChannelFilterClick: (String) -> Unit,
     onClearFilter: () -> Unit,
-    onProgramClick: (Program) -> Unit
+    onProgramClick: (Program) -> Unit,
+    onBack: () -> Unit
 ) {
     val columns = when (adaptiveInfo.windowSizeClass.windowWidthSizeClass) {
         WindowWidthSizeClass.MEDIUM -> 2
@@ -260,6 +301,22 @@ private fun MultiDayLayout(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars)
     ) {
+        // Cast member filter chip (if active)
+        if (castMemberName != null) {
+            FilterChip(
+                selected = true,
+                onClick = onBack,
+                label = { Text("Filtr: $castMemberName") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Zrušit filtr"
+                    )
+                },
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+        
         // Tab row for day selection
         DayTabRow(
             days = days,

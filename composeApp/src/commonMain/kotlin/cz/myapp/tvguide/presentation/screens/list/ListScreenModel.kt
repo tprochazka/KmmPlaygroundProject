@@ -5,6 +5,7 @@ import cafe.adriel.voyager.core.model.screenModelScope
 import cz.myapp.tvguide.domain.model.Channel
 import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.usecase.GetChronologicalProgramsUseCase
+import cz.myapp.tvguide.domain.usecase.GetProgramsByCastMemberUseCase
 import cz.myapp.tvguide.util.AppLogger
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,13 +26,16 @@ import kotlin.time.Duration.Companion.hours
  * Manages state for chronological program list view:
  * - Loading programs sorted by time
  * - Channel filtering
+ * - Cast member filtering (T129)
  * - Infinite scroll pagination
  * - Pull-to-refresh support
  * 
  * US4: As a user, I want to browse all programs chronologically.
  */
 class ListScreenModel(
-    private val getChronologicalProgramsUseCase: GetChronologicalProgramsUseCase
+    private val getChronologicalProgramsUseCase: GetChronologicalProgramsUseCase,
+    private val getProgramsByCastMemberUseCase: GetProgramsByCastMemberUseCase? = null,
+    private val castMemberId: String? = null
 ) : ScreenModel {
     private val _state = MutableStateFlow<ListScreenState>(ListScreenState.Loading)
     val state: StateFlow<ListScreenState> = _state.asStateFlow()
@@ -99,24 +103,46 @@ class ListScreenModel(
             dayState.value = ListScreenState.Loading
 
             try {
-                AppLogger.d("ListScreenModel") { "Loading programs for $day..." }
+                AppLogger.d("ListScreenModel") { "Loading programs for $day (castMember: $castMemberId)..." }
 
-                // Vypočítat časový rozsah pro vybraný den
-                val startOfDay = LocalDateTime(day.year, day.month, day.dayOfMonth, 0, 0, 0)
-                    .toInstant(TimeZone.currentSystemDefault())
-                val endOfDay = startOfDay + 24.hours
+                val programs = if (castMemberId != null && getProgramsByCastMemberUseCase != null) {
+                    // Load programs by cast member
+                    val programPairs = getProgramsByCastMemberUseCase(castMemberId, limit = 100)
+                    
+                    // Filter by day
+                    val startOfDay = LocalDateTime(day.year, day.month, day.dayOfMonth, 0, 0, 0)
+                        .toInstant(TimeZone.currentSystemDefault())
+                    val endOfDay = startOfDay + 24.hours
+                    
+                    programPairs
+                        .filter { (_, program) -> 
+                            program.startTime >= startOfDay && program.startTime < endOfDay 
+                        }
+                        .sortedBy { (_, program) -> program.startTime }
+                } else {
+                    // Load chronological programs (original behavior)
+                    val startOfDay = LocalDateTime(day.year, day.month, day.dayOfMonth, 0, 0, 0)
+                        .toInstant(TimeZone.currentSystemDefault())
+                    val endOfDay = startOfDay + 24.hours
 
-                val programs = getChronologicalProgramsUseCase(
-                    startTime = startOfDay,
-                    endTime = endOfDay,
-                    channelId = currentChannelFilter,
-                    useFavorites = false
-                )
+                    getChronologicalProgramsUseCase(
+                        startTime = startOfDay,
+                        endTime = endOfDay,
+                        channelId = currentChannelFilter,
+                        useFavorites = false
+                    )
+                }
 
                 AppLogger.d("ListScreenModel") { "Loaded ${programs.size} programs for $day" }
 
                 if (programs.isEmpty()) {
-                    dayState.value = ListScreenState.Empty(message = "Žádné programy k zobrazení")
+                    dayState.value = ListScreenState.Empty(
+                        message = if (castMemberId != null) {
+                            "Žádné programy s tímto účinkujícím"
+                        } else {
+                            "Žádné programy k zobrazení"
+                        }
+                    )
                 } else {
                     dayState.value = ListScreenState.Success(
                         programs = programs,

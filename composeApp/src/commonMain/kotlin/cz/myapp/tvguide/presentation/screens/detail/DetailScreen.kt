@@ -16,9 +16,11 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import coil3.compose.AsyncImage
 import cz.myapp.tvguide.di.DomainModule
+import cz.myapp.tvguide.domain.model.CastMember
 import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.presentation.components.*
+import cz.myapp.tvguide.presentation.screens.list.ListScreen
 import cz.myapp.tvguide.util.formatTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -64,7 +66,11 @@ data class DetailScreen(
                 navigator?.push(DetailScreen(program.id))
             },
             onCastMemberClick = { castMember ->
-                // TODO Phase 7 advanced: Navigate to cast member programs list
+                // T129: Navigate to cast member programs list
+                navigator?.push(ListScreen(
+                    castMemberId = castMember.id,
+                    castMemberName = castMember.name
+                ))
             },
             onBack = { navigator?.pop() }
         )
@@ -76,7 +82,7 @@ private fun DetailScreenContent(
     state: DetailScreenState,
     onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
-    onCastMemberClick: (String) -> Unit,
+    onCastMemberClick: (CastMember) -> Unit,
     onBack: () -> Unit
 ) {
     when (state) {
@@ -114,7 +120,7 @@ private fun ProgramDetailContent(
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
-    onCastMemberClick: (String) -> Unit
+    onCastMemberClick: (CastMember) -> Unit
 ) {
     // Determine layout based on window size
     val adaptiveInfo = currentWindowAdaptiveInfo()
@@ -156,7 +162,7 @@ private fun CompactLayout(
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
-    onCastMemberClick: (String) -> Unit
+    onCastMemberClick: (CastMember) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -257,7 +263,7 @@ private fun TwoColumnLayout(
     broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
-    onCastMemberClick: (String) -> Unit
+    onCastMemberClick: (CastMember) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -454,7 +460,7 @@ private fun ProgramDescription(program: Program) {
 @Composable
 private fun CastSection(
     cast: ProgramCast,
-    onCastMemberClick: (String) -> Unit
+    onCastMemberClick: (CastMember) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // Directors
@@ -481,7 +487,7 @@ private fun CastSection(
                 items(cast.cast) { member ->
                     CastMemberCard(
                         member = member,
-                        onClick = { onCastMemberClick(member.id) }
+                        onClick = { onCastMemberClick(member) }
                     )
                 }
             }
