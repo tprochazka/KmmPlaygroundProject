@@ -44,7 +44,8 @@ fun AdaptiveScaffold(
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             tabs.forEach { tab ->
-                val isSelected = tabNavigator.current == tab
+                // Safe check: only compare if current is actually a Tab
+                val isSelected = (tabNavigator.current as? Tab) == tab
                 item(
                     selected = isSelected,
                     onClick = { tabNavigator.current = tab },
