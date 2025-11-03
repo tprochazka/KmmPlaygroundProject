@@ -21,6 +21,7 @@ import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.presentation.components.*
 import cz.myapp.tvguide.util.formatTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Detail screen - Shows detailed program information (US5)
@@ -48,7 +49,8 @@ data class DetailScreen(
                 programId = programId,
                 getProgramDetailsUseCase = DomainModule.getProgramDetailsUseCase,
                 getSimilarProgramsUseCase = DomainModule.getSimilarProgramsUseCase,
-                channelRepository = cz.myapp.tvguide.di.DataModule.channelRepository
+                channelRepository = cz.myapp.tvguide.di.DataModule.channelRepository,
+                programRepository = cz.myapp.tvguide.di.DataModule.programRepository
             )
         }
         
@@ -87,6 +89,7 @@ private fun DetailScreenContent(
                 program = state.program,
                 cast = state.cast,
                 similarPrograms = state.similarPrograms,
+                broadcastSchedule = state.broadcastSchedule,
                 onRefresh = onRefresh,
                 onSimilarProgramClick = onSimilarProgramClick,
                 onCastMemberClick = onCastMemberClick
@@ -108,6 +111,7 @@ private fun ProgramDetailContent(
     program: Program,
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
     onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (String) -> Unit
@@ -122,6 +126,8 @@ private fun ProgramDetailContent(
             program = program,
             cast = cast,
             similarPrograms = similarPrograms,
+            broadcastSchedule = broadcastSchedule,
+            onRefresh = onRefresh,
             onSimilarProgramClick = onSimilarProgramClick,
             onCastMemberClick = onCastMemberClick
         )
@@ -131,6 +137,8 @@ private fun ProgramDetailContent(
             program = program,
             cast = cast,
             similarPrograms = similarPrograms,
+            broadcastSchedule = broadcastSchedule,
+            onRefresh = onRefresh,
             onSimilarProgramClick = onSimilarProgramClick,
             onCastMemberClick = onCastMemberClick
         )
@@ -145,6 +153,8 @@ private fun CompactLayout(
     program: Program,
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (String) -> Unit
 ) {
@@ -200,6 +210,23 @@ private fun CompactLayout(
             RatingsSection(program = program)
         }
         
+        // Broadcast schedule across channels
+        if (broadcastSchedule.isNotEmpty()) {
+            item {
+                Text(
+                    text = "Další vysílání",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+            
+            item {
+                BroadcastScheduleSection(
+                    broadcasts = broadcastSchedule,
+                    onClick = onSimilarProgramClick
+                )
+            }
+        }
+        
         // Similar programs
         if (similarPrograms.isNotEmpty()) {
             item {
@@ -227,6 +254,8 @@ private fun TwoColumnLayout(
     program: Program,
     cast: ProgramCast,
     similarPrograms: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    broadcastSchedule: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    onRefresh: () -> Unit,
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (String) -> Unit
 ) {
@@ -283,6 +312,23 @@ private fun TwoColumnLayout(
             // Ratings section
             item {
                 RatingsSection(program = program)
+            }
+            
+            // Broadcast schedule across channels
+            if (broadcastSchedule.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Další vysílání",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+                
+                item {
+                    BroadcastScheduleSection(
+                        broadcasts = broadcastSchedule,
+                        onClick = onSimilarProgramClick
+                    )
+                }
             }
             
             // Similar programs
@@ -539,6 +585,69 @@ private fun SimilarProgramsRow(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Broadcast schedule section showing when and where the program will air.
+ */
+@Composable
+private fun BroadcastScheduleSection(
+    broadcasts: List<Pair<cz.myapp.tvguide.domain.model.Channel, Program>>,
+    onClick: (Program) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        broadcasts.forEach { (channel, program) ->
+            Card(
+                onClick = { onClick(program) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                ) {
+                    // Channel and program info
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = channel.name,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        
+                        Text(
+                            text = "${program.startTime.formatTime()} - ${program.endTime.formatTime()}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        if (program.subtitle != null) {
+                            Text(
+                                text = program.subtitle,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    
+                    // Date
+                    val date = program.startTime.toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    Text(
+                        text = "${date.dayOfMonth}.${date.monthNumber}.",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
         }

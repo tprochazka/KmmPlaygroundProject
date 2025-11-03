@@ -6,6 +6,7 @@ import cz.myapp.tvguide.domain.model.Channel
 import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.domain.repository.ChannelRepository
+import cz.myapp.tvguide.domain.repository.ProgramRepository
 import cz.myapp.tvguide.domain.usecase.GetProgramDetailsUseCase
 import cz.myapp.tvguide.domain.usecase.GetSimilarProgramsUseCase
 import cz.myapp.tvguide.util.AppLogger
@@ -29,7 +30,8 @@ class DetailScreenModel(
     private val programId: String,
     private val getProgramDetailsUseCase: GetProgramDetailsUseCase,
     private val getSimilarProgramsUseCase: GetSimilarProgramsUseCase,
-    private val channelRepository: ChannelRepository
+    private val channelRepository: ChannelRepository,
+    private val programRepository: ProgramRepository
 ) : ScreenModel {
     
     private val _state = MutableStateFlow<DetailScreenState>(DetailScreenState.Loading)
@@ -74,10 +76,29 @@ class DetailScreenModel(
                     } else null
                 }
                 
+                // Get broadcast schedule: Find programs with same title across all channels
+                AppLogger.d("DetailScreenModel") { "Loading broadcast schedule for: ${program.title}" }
+                val broadcastSchedule = programRepository.searchPrograms(
+                    query = program.title
+                ).first()
+                    .filter { it.id != program.id } // Exclude the current program
+                    .sortedBy { it.startTime }
+                    .take(10) // Limit to 10 broadcasts
+                
+                val broadcastsWithChannels = broadcastSchedule.mapNotNull { broadcast ->
+                    val channel = allChannels.find { it.id == broadcast.channelId }
+                    if (channel != null) {
+                        channel to broadcast
+                    } else null
+                }
+                
+                AppLogger.d("DetailScreenModel") { "Found ${broadcastsWithChannels.size} broadcast schedules" }
+                
                 _state.value = DetailScreenState.Success(
                     program = program,
                     cast = cast,
-                    similarPrograms = similarPrograms
+                    similarPrograms = similarPrograms,
+                    broadcastSchedule = broadcastsWithChannels
                 )
             } catch (e: Exception) {
                 AppLogger.e("DetailScreenModel", e) { "Error loading program details" }
@@ -112,11 +133,13 @@ sealed class DetailScreenState {
      * @property program The program details
      * @property cast Cast and crew information
      * @property similarPrograms List of similar programs with their channels
+     * @property broadcastSchedule List of broadcast times across all channels
      */
     data class Success(
         val program: Program,
         val cast: ProgramCast,
-        val similarPrograms: List<Pair<Channel, Program>>
+        val similarPrograms: List<Pair<Channel, Program>>,
+        val broadcastSchedule: List<Pair<Channel, Program>> = emptyList()
     ) : DetailScreenState()
     
     /**

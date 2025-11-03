@@ -241,7 +241,7 @@ Kotlin Multiplatform project structure:
 - [x] T125 [US5] Display cast and crew section with photos
 - [x] T126 [US5] Add ČSFD and IMDB rating section with external links
 - [x] T127 [US5] Implement similar content recommendations section
-- [ ] T128 [US5] Add broadcast schedule across all channels
+- [X] T128 [US5] Add broadcast schedule across all channels
 - [ ] T129 [US5] Implement cast member tap navigation to their programs list
 - [ ] T130 [US5] Add favorite program toggle button
 - [x] T131 [US5] Adaptive layout: scrollable column (Compact), two-column with sticky poster (Medium/Expanded)
