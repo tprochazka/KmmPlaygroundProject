@@ -34,6 +34,6 @@ class CreateChannelListUseCase(
     }
     
     private fun generateListId(): String {
-        return "list_${System.currentTimeMillis()}"
+        return "list_${Clock.System.now().epochSeconds}"
     }
 }
