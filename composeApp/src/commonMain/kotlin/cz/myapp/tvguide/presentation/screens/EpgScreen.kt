@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -45,8 +46,10 @@ import cz.myapp.tvguide.presentation.components.ChannelLogo
 import cz.myapp.tvguide.presentation.components.EmptyState
 import cz.myapp.tvguide.presentation.components.EpgProgramItem
 import cz.myapp.tvguide.presentation.components.LoadingIndicator
+import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
 import cz.myapp.tvguide.presentation.screens.epg.EpgScreenModel
+import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
 import cz.myapp.tvguide.util.formatTime
 import kotlin.time.Duration.Companion.hours
 
@@ -72,6 +75,31 @@ object EpgScreen : Screen {
         }
         
         Scaffold(
+            topBar = {
+                TVGuideAppBar(
+                    title = "Mřížka",
+                    onSettingsClick = {
+                        navigator.push(SettingsScreen())
+                    },
+                    showOverflowMenu = true,
+                    actions = {
+                        // Favorites filter button
+                        IconButton(
+                            onClick = { screenModel.toggleFavoritesFilter() }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = if (state.showFavoritesOnly) "Zobrazit vše" else "Pouze oblíbené",
+                                tint = if (state.showFavoritesOnly) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
+                        }
+                    }
+                )
+            },
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { padding ->
             Column(
@@ -79,33 +107,6 @@ object EpgScreen : Screen {
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Title and filters
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "TV Průvodce",
-                        style = MaterialTheme.typography.headlineMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    FilterChip(
-                        selected = state.showFavoritesOnly,
-                        onClick = { screenModel.toggleFavoritesFilter() },
-                        label = { Text("Oblíbené") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Favorite,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                }
-                
                 HorizontalDivider()
                 
                 // EPG Grid

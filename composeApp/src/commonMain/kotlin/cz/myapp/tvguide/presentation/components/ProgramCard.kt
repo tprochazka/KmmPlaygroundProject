@@ -88,7 +88,7 @@ fun ProgramCard(
                 // Live indicator
                 if (program != null) {
                     Surface(
-                        color = LiveIndicatorColor,
+                        color = MaterialTheme.colorScheme.error,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(

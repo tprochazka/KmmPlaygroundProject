@@ -15,6 +15,9 @@ import cz.myapp.tvguide.presentation.screens.list.ListScreen
  */
 object ListTab : Tab {
     
+    // Screen instance persists at tab level
+    private val listScreen = ListScreen()
+    
     override val options: TabOptions
         @Composable
         get() {
@@ -23,7 +26,7 @@ object ListTab : Tab {
             
             return remember {
                 TabOptions(
-                    index = 3u,
+                    index = 2u,
                     title = title,
                     icon = icon
                 )
@@ -32,6 +35,6 @@ object ListTab : Tab {
     
     @Composable
     override fun Content() {
-        Navigator(ListScreen())
+        Navigator(listScreen)
     }
 }

@@ -12,13 +12,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import cz.myapp.tvguide.di.DomainModule
 import cz.myapp.tvguide.presentation.theme.ThemeMode
 
@@ -45,8 +55,10 @@ data class SettingsScreen(
     val dummy: Unit = Unit
 ) : Screen {
     
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
         val screenModel = SettingsScreenModel(
             getUserPreferencesUseCase = DomainModule.getUserPreferencesUseCase,
             updateUserPreferencesUseCase = DomainModule.updateUserPreferencesUseCase
@@ -54,58 +66,71 @@ data class SettingsScreen(
         
         val preferences by screenModel.preferences.collectAsState()
         
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Title
-            Text(
-                text = "Nastavení",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-            
-            // Theme Selection Section
-            SettingsSection(title = "Vzhled") {
-                ThemeSelection(
-                    selectedTheme = preferences.themeMode,
-                    onThemeSelected = { screenModel.updateThemeMode(it) }
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Nastavení") },
+                    navigationIcon = {
+                        IconButton(onClick = { navigator.pop() }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Zpět"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    )
                 )
             }
-            
-            // Display Settings Section
-            SettingsSection(title = "Zobrazení") {
-                SwitchPreference(
-                    title = "24hodinový formát",
-                    description = "Použít 24hodinový formát času",
-                    checked = preferences.use24HourFormat,
-                    onCheckedChange = { screenModel.toggleTimeFormat() }
-                )
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Theme Selection Section
+                SettingsSection(title = "Vzhled") {
+                    ThemeSelection(
+                        selectedTheme = preferences.themeMode,
+                        onThemeSelected = { screenModel.updateThemeMode(it) }
+                    )
+                }
                 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                // Display Settings Section
+                SettingsSection(title = "Zobrazení") {
+                    SwitchPreference(
+                        title = "24hodinový formát",
+                        description = "Použít 24hodinový formát času",
+                        checked = preferences.use24HourFormat,
+                        onCheckedChange = { screenModel.toggleTimeFormat() }
+                    )
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                    
+                    SwitchPreference(
+                        title = "Kompaktní režim",
+                        description = "Menší prvky a hustší rozložení",
+                        checked = preferences.compactMode,
+                        onCheckedChange = { screenModel.toggleCompactMode() }
+                    )
+                }
                 
-                SwitchPreference(
-                    title = "Kompaktní režim",
-                    description = "Menší prvky a hustší rozložení",
-                    checked = preferences.compactMode,
-                    onCheckedChange = { screenModel.toggleCompactMode() }
-                )
+                // Notifications Section
+                SettingsSection(title = "Oznámení") {
+                    SwitchPreference(
+                        title = "Povolit oznámení",
+                        description = "Upozornění na oblíbené pořady",
+                        checked = preferences.notificationsEnabled,
+                        onCheckedChange = { screenModel.toggleNotifications() }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            
-            // Notifications Section
-            SettingsSection(title = "Oznámení") {
-                SwitchPreference(
-                    title = "Povolit oznámení",
-                    description = "Upozornění na oblíbené pořady",
-                    checked = preferences.notificationsEnabled,
-                    onCheckedChange = { screenModel.toggleNotifications() }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }

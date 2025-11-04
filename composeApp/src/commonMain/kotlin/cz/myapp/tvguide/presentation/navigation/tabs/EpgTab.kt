@@ -18,12 +18,12 @@ object EpgTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val title = "Program"
+            val title = "Mřížka"
             val icon = rememberVectorPainter(Icons.Default.DateRange)
             
             return remember {
                 TabOptions(
-                    index = 2u,
+                    index = 1u,
                     title = title,
                     icon = icon
                 )

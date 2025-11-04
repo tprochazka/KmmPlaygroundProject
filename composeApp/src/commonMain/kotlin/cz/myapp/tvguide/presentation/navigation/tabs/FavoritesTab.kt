@@ -17,12 +17,12 @@ object FavoritesTab : Tab {
     override val options: TabOptions
         @Composable
         get() {
-            val title = "Oblíbené"
+            val title = "Stanice"
             val icon = rememberVectorPainter(Icons.Default.Favorite)
             
             return remember {
                 TabOptions(
-                    index = 1u,
+                    index = 3u,
                     title = title,
                     icon = icon
                 )

@@ -43,7 +43,9 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import cz.myapp.tvguide.presentation.components.ChannelListItem
 import cz.myapp.tvguide.presentation.components.EmptyState
 import cz.myapp.tvguide.presentation.components.LoadingIndicator
+import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.favorites.FavoritesScreenModel
+import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
 
 /**
  * Favorites screen - Manage favorite channels and custom lists (US2)
@@ -67,6 +69,14 @@ object FavoritesScreen : Screen {
         }
         
         Scaffold(
+            topBar = {
+                TVGuideAppBar(
+                    title = "Oblíbené Stanice",
+                    onSettingsClick = {
+                        navigator.push(SettingsScreen())
+                    }
+                )
+            },
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
@@ -81,13 +91,6 @@ object FavoritesScreen : Screen {
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                // Title
-                Text(
-                    text = "Oblíbené kanály",
-                    style = MaterialTheme.typography.headlineMedium,
-                    modifier = Modifier.padding(16.dp)
-                )
-                
                 // Search bar
                 SearchBar(
                     query = state.searchQuery,

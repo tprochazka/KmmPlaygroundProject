@@ -7,11 +7,8 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.usecase.GetCurrentProgramsUseCase
 import cz.myapp.tvguide.domain.usecase.GetFavoriteChannelsUseCase
 import cz.myapp.tvguide.util.AppLogger
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 
 /**
  * Screen model for HomeScreen.
@@ -19,7 +16,6 @@ import kotlin.time.Clock
  * Manages state for current TV programs view:
  * - Loading current programs for favorite channels
  * - Handling loading/error states
- * - Auto-refresh when programs end
  * - Pull-to-refresh support
  * 
  * US1: As a user, I want to see what's currently on TV.
@@ -32,11 +28,8 @@ class HomeScreenModel(
     private val _state = MutableStateFlow<HomeScreenState>(HomeScreenState.Loading)
     val state: StateFlow<HomeScreenState> = _state.asStateFlow()
     
-    private var autoRefreshJob: Job? = null
-    
     init {
         loadCurrentPrograms()
-        startAutoRefresh()
     }
     
     /**
@@ -92,26 +85,6 @@ class HomeScreenModel(
     fun refresh() {
         AppLogger.d("HomeScreenModel") { "Manual refresh triggered" }
         loadCurrentPrograms()
-    }
-    
-    /**
-     * Start auto-refresh timer.
-     * Refreshes data every minute to ensure current programs are up-to-date.
-     */
-    private fun startAutoRefresh() {
-        autoRefreshJob?.cancel()
-        autoRefreshJob = screenModelScope.launch {
-            while (true) {
-                delay(60_000) // 1 minute
-                AppLogger.d("HomeScreenModel") { "Auto-refresh triggered" }
-                loadCurrentPrograms()
-            }
-        }
-    }
-    
-    override fun onDispose() {
-        super.onDispose()
-        autoRefreshJob?.cancel()
     }
 }
 

@@ -33,15 +33,14 @@ fun App() {
     // Apply theme
     TvGuideTheme(themeMode = themeMode) {
         Surface {
-            // Set up tab navigation with all 5 tabs
+            // Set up tab navigation with 4 main tabs (Settings moved to app bar menu)
             TabNavigator(HomeTab) {
                 val tabs = remember {
                     listOf(
                         HomeTab,
-                        FavoritesTab,
                         EpgTab,
                         ListTab,
-                        SettingsTab
+                        FavoritesTab
                     )
                 }
                 

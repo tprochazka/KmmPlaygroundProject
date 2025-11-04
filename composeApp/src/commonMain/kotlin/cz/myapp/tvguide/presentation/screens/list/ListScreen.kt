@@ -11,10 +11,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
-import cafe.adriel.voyager.core.model.rememberScreenModel
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
@@ -24,7 +24,9 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.presentation.components.EmptyState
 import cz.myapp.tvguide.presentation.components.LoadingIndicator
 import cz.myapp.tvguide.presentation.components.ProgramListItem
+import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
+import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
 import cz.myapp.tvguide.presentation.components.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -54,21 +56,33 @@ data class ListScreen(
     val castMemberName: String? = null
 ) : Screen {
     
+    companion object {
+        // Cache for screen models to persist across tab switches
+        private val screenModelCache = mutableMapOf<String, ListScreenModel>()
+        
+        private fun getOrCreateScreenModel(castMemberId: String?): ListScreenModel {
+            val key = castMemberId ?: "default"
+            return screenModelCache.getOrPut(key) {
+                ListScreenModel(
+                    getChronologicalProgramsUseCase = DomainModule.getChronologicalProgramsUseCase,
+                    getProgramsByCastMemberUseCase = if (castMemberId != null) {
+                        DomainModule.getProgramsByCastMemberUseCase
+                    } else {
+                        null
+                    },
+                    castMemberId = castMemberId
+                )
+            }
+        }
+    }
+    
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         
-        // Create screen model with dependencies
-        val screenModel = remember {
-            ListScreenModel(
-                getChronologicalProgramsUseCase = DomainModule.getChronologicalProgramsUseCase,
-                getProgramsByCastMemberUseCase = if (castMemberId != null) {
-                    DomainModule.getProgramsByCastMemberUseCase
-                } else {
-                    null
-                },
-                castMemberId = castMemberId
-            )
+        // Get cached screen model - persists across tab switches
+        val screenModel = remember(castMemberId) {
+            getOrCreateScreenModel(castMemberId)
         }
         
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -202,6 +216,7 @@ private fun CompactListLayout(
     onProgramClick: (Program) -> Unit,
     onBack: () -> Unit
 ) {
+    val navigator = LocalNavigator.currentOrThrow
     val initialPage = days.indexOf(selectedDay).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
@@ -213,56 +228,67 @@ private fun CompactListLayout(
         }
     }
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
-    ) {
-        // Cast member filter chip (if active)
-        if (castMemberName != null) {
-            FilterChip(
-                selected = true,
-                onClick = onBack,
-                label = { Text("Filtr: $castMemberName") },
-                leadingIcon = {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Zrušit filtr"
-                    )
-                },
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+    Scaffold(
+        topBar = {
+            TVGuideAppBar(
+                title = "Seznam",
+                onSettingsClick = {
+                    navigator.push(SettingsScreen())
+                }
             )
         }
-        
-        // Tab řádek pro navigaci mezi dny
-        DayTabRow(
-            days = days,
-            selectedDay = selectedDay,
-            today = today,
-            onDaySelected = { day ->
-                val pageIndex = days.indexOf(day)
-                if (pageIndex >= 0) {
-                    coroutineScope.launch {
-                        pagerState.animateScrollToPage(pageIndex)
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            // Cast member filter chip (if active)
+            if (castMemberName != null) {
+                FilterChip(
+                    selected = true,
+                    onClick = onBack,
+                    label = { Text("Filtr: $castMemberName") },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Zrušit filtr"
+                        )
+                    },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+            
+            // Tab řádek pro navigaci mezi dny
+            DayTabRow(
+                days = days,
+                selectedDay = selectedDay,
+                today = today,
+                onDaySelected = { day ->
+                    val pageIndex = days.indexOf(day)
+                    if (pageIndex >= 0) {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(pageIndex)
+                        }
                     }
                 }
-            }
-        )
-        
-        // Horizontální pager pro dny
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize(),
-            beyondViewportPageCount = 2 // Předčíst 2 stránky dopředu a dozadu
-        ) { page ->
-            val dayForPage = days[page]
-            DayColumn(
-                day = dayForPage,
-                screenModel = screenModel,
-                onChannelFilterClick = onChannelFilterClick,
-                onClearFilter = onClearFilter,
-                onProgramClick = onProgramClick
             )
+            
+            // Horizontální pager pro dny
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxSize(),
+                beyondViewportPageCount = 2 // Předčíst 2 stránky dopředu a dozadu
+            ) { page ->
+                val dayForPage = days[page]
+                DayColumn(
+                    day = dayForPage,
+                    screenModel = screenModel,
+                    onChannelFilterClick = onChannelFilterClick,
+                    onClearFilter = onClearFilter,
+                    onProgramClick = onProgramClick
+                )
+            }
         }
     }
 }

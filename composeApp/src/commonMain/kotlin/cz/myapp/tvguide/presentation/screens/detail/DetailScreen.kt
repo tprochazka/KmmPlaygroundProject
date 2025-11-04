@@ -24,6 +24,7 @@ import cz.myapp.tvguide.domain.model.Program
 import cz.myapp.tvguide.domain.model.ProgramCast
 import cz.myapp.tvguide.presentation.components.*
 import cz.myapp.tvguide.presentation.screens.list.ListScreen
+import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
 import cz.myapp.tvguide.util.formatTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -183,39 +184,53 @@ private fun CompactLayout(
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit
 ) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Poster image
-        if (program.imageUrl != null) {
-            item {
-                ProgramPoster(
-                    imageUrl = program.imageUrl,
-                    title = program.title,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                )
-            }
-        }
-        
-        // Title and metadata
-        item {
-            ProgramHeader(
-                program = program,
-                isFavorite = isFavorite,
-                onToggleFavorite = onToggleFavorite
+    val navigator = LocalNavigator.current
+    
+    Scaffold(
+        topBar = {
+            TVGuideAppBar(
+                title = program.title,
+                showBackButton = true,
+                onBackClick = { navigator?.pop() },
+                onSettingsClick = {
+                    navigator?.push(SettingsScreen())
+                }
             )
         }
-        
-        // Description
-        item {
-            ProgramDescription(program = program)
-        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Poster image
+            if (program.imageUrl != null) {
+                item {
+                    ProgramPoster(
+                        imageUrl = program.imageUrl,
+                        title = program.title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(400.dp)
+                    )
+                }
+            }
+            
+            // Title and metadata
+            item {
+                ProgramHeader(
+                    program = program,
+                    isFavorite = isFavorite,
+                    onToggleFavorite = onToggleFavorite
+                )
+            }
+            
+            // Description
+            item {
+                ProgramDescription(program = program)
+            }
         
         // Cast and crew
         if (cast.cast.isNotEmpty() || cast.directors.isNotEmpty()) {
@@ -272,6 +287,7 @@ private fun CompactLayout(
                 )
             }
         }
+        }
     }
 }
 
@@ -290,51 +306,65 @@ private fun TwoColumnLayout(
     onSimilarProgramClick: (Program) -> Unit,
     onCastMemberClick: (CastMember) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(24.dp)
-    ) {
-        // Left: Sticky poster
-        if (program.imageUrl != null) {
-            ProgramPoster(
-                imageUrl = program.imageUrl,
+    val navigator = LocalNavigator.current
+    
+    Scaffold(
+        topBar = {
+            TVGuideAppBar(
                 title = program.title,
-                modifier = Modifier
-                    .width(300.dp)
-                    .height(450.dp)
+                showBackButton = true,
+                onBackClick = { navigator?.pop() },
+                onSettingsClick = {
+                    navigator?.push(SettingsScreen())
+                }
             )
         }
-        
-        // Right: Scrollable content
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) { paddingValues ->
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Title and metadata
-            item {
-                ProgramHeader(
-                    program = program,
-                    isFavorite = isFavorite,
-                    onToggleFavorite = onToggleFavorite
+            // Left: Sticky poster
+            if (program.imageUrl != null) {
+                ProgramPoster(
+                    imageUrl = program.imageUrl,
+                    title = program.title,
+                    modifier = Modifier
+                        .width(300.dp)
+                        .height(450.dp)
                 )
             }
             
-            // Description
-            item {
-                ProgramDescription(program = program)
-            }
-            
-            // Cast and crew
-            if (cast.cast.isNotEmpty() || cast.directors.isNotEmpty()) {
+            // Right: Scrollable content
+            LazyColumn(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Title and metadata
                 item {
-                    Text(
-                        text = "Obsazení a tvůrci",
-                        style = MaterialTheme.typography.titleLarge
+                    ProgramHeader(
+                        program = program,
+                        isFavorite = isFavorite,
+                        onToggleFavorite = onToggleFavorite
                     )
                 }
+                
+                // Description
+                item {
+                    ProgramDescription(program = program)
+                }
+                
+                // Cast and crew
+                if (cast.cast.isNotEmpty() || cast.directors.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "Obsazení a tvůrci",
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    }
                 
                 item {
                     CastSection(
@@ -381,6 +411,7 @@ private fun TwoColumnLayout(
                         onClick = onSimilarProgramClick
                     )
                 }
+            }
             }
         }
     }
@@ -525,7 +556,7 @@ private fun CastSection(
         // Directors
         if (cast.directors.isNotEmpty()) {
             Text(
-                text = "Režie: ${cast.directors.joinToString(", ")}",
+                text = "Režie: ${cast.directors.joinToString(", ") { it.name }}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -533,7 +564,7 @@ private fun CastSection(
         // Writers
         if (cast.writers.isNotEmpty()) {
             Text(
-                text = "Scénář: ${cast.writers.joinToString(", ")}",
+                text = "Scénář: ${cast.writers.joinToString(", ") { it.name }}",
                 style = MaterialTheme.typography.bodyMedium
             )
         }
