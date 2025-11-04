@@ -189,11 +189,32 @@ private fun CompactLayout(
     Scaffold(
         topBar = {
             TVGuideAppBar(
-                title = program.title,
+                title = "Detail pořadu",
                 showBackButton = true,
                 onBackClick = { navigator?.pop() },
                 onSettingsClick = {
                     navigator?.push(SettingsScreen())
+                },
+                actions = {
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(
+                            imageVector = if (isFavorite) {
+                                Icons.Default.Favorite
+                            } else {
+                                Icons.Default.FavoriteBorder
+                            },
+                            contentDescription = if (isFavorite) {
+                                "Odebrat z oblíbených"
+                            } else {
+                                "Přidat do oblíbených"
+                            },
+                            tint = if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
             )
         }
@@ -311,11 +332,32 @@ private fun TwoColumnLayout(
     Scaffold(
         topBar = {
             TVGuideAppBar(
-                title = program.title,
+                title = "Detail pořadu",
                 showBackButton = true,
                 onBackClick = { navigator?.pop() },
                 onSettingsClick = {
                     navigator?.push(SettingsScreen())
+                },
+                actions = {
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(
+                            imageVector = if (isFavorite) {
+                                Icons.Default.Favorite
+                            } else {
+                                Icons.Default.FavoriteBorder
+                            },
+                            contentDescription = if (isFavorite) {
+                                "Odebrat z oblíbených"
+                            } else {
+                                "Přidat do oblíbených"
+                            },
+                            tint = if (isFavorite) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    }
                 }
             )
         }
@@ -446,39 +488,11 @@ private fun ProgramHeader(
     onToggleFavorite: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        // Title with favorite button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-        ) {
-            Text(
-                text = program.title,
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.weight(1f)
-            )
-            
-            // T130: Favorite toggle button
-            IconButton(onClick = onToggleFavorite) {
-                Icon(
-                    imageVector = if (isFavorite) {
-                        Icons.Default.Favorite
-                    } else {
-                        Icons.Default.FavoriteBorder
-                    },
-                    contentDescription = if (isFavorite) {
-                        "Odebrat z oblíbených"
-                    } else {
-                        "Přidat do oblíbených"
-                    },
-                    tint = if (isFavorite) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            }
-        }
+        // Title
+        Text(
+            text = program.title,
+            style = MaterialTheme.typography.headlineMedium
+        )
         
         // Subtitle
         if (program.subtitle != null) {
