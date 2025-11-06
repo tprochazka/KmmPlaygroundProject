@@ -1,8 +1,22 @@
 package cz.myapp.tvguide.presentation.components
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -11,10 +25,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cz.myapp.tvguide.domain.model.Channel
 import cz.myapp.tvguide.domain.model.Program
-import cz.myapp.tvguide.presentation.theme.LiveIndicatorColor
+import cz.myapp.tvguide.presentation.preview.previewChannel
+import cz.myapp.tvguide.presentation.preview.previewProgram
 import cz.myapp.tvguide.util.formatTime
-import kotlin.time.Clock
 import kotlinx.datetime.TimeZone
+import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.time.Clock
 
 /**
  * Card displaying current program for a channel.
@@ -133,13 +149,22 @@ fun ProgramCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
-                    // Progress bar
-                    val now = Clock.System.now()
+
+                    // Progress bar with periodic time updates
+                    var currentTime by remember { mutableStateOf(Clock.System.now()) }
+
+                    // Update time every 10 seconds to refresh progress
+                    LaunchedEffect(program.id) {
+                        while (true) {
+                            kotlinx.coroutines.delay(10_000) // 10 seconds
+                            currentTime = Clock.System.now()
+                        }
+                    }
+
                     val totalDuration = (program.endTime.toEpochMilliseconds() - program.startTime.toEpochMilliseconds()).toFloat()
-                    val elapsed = (now.toEpochMilliseconds() - program.startTime.toEpochMilliseconds()).toFloat()
+                    val elapsed = (currentTime.toEpochMilliseconds() - program.startTime.toEpochMilliseconds()).toFloat()
                     val progress = (elapsed / totalDuration).coerceIn(0f, 1f)
-                    
+
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier.fillMaxWidth(),
@@ -155,4 +180,34 @@ fun ProgramCard(
             }
         }
     }
+}
+
+@Preview
+@Composable
+private fun ProgramCardPreview() {
+    val sampleChannel = previewChannel(
+        name = "Nova"
+    )
+    val sampleProgram = previewProgram(
+        title = "Ordinace v růžové zahradě",
+        description = "Původní český seriál z lékařského prostředí."
+    )
+    ProgramCard(
+        channel = sampleChannel,
+        program = sampleProgram,
+        onClick = {}
+    )
+}
+
+@Preview
+@Composable
+private fun ProgramCardNoProgramPreview() {
+    val sampleChannel = previewChannel(
+        name = "ČT2"
+    )
+    ProgramCard(
+        channel = sampleChannel,
+        program = null,
+        onClick = {}
+    )
 }
