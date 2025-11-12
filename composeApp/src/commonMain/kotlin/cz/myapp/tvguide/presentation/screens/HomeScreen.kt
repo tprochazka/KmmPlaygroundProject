@@ -11,10 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import cafe.adriel.voyager.navigator.LocalNavigator
-import cafe.adriel.voyager.navigator.currentOrThrow
+import cz.myapp.tvguide.data.mock.MockChannels
+import cz.myapp.tvguide.data.mock.MockPrograms
 import cz.myapp.tvguide.presentation.components.*
 import cz.myapp.tvguide.presentation.screens.home.HomeScreenState
 import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
+import cz.myapp.tvguide.presentation.theme.TvGuideTheme
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 /**
  * Home screen - Shows current TV programs (US1)
@@ -30,8 +33,9 @@ fun HomeScreen(
     onRefresh: () -> Unit,
     onProgramClick: (String) -> Unit = {}
 ) {
-    val navigator = LocalNavigator.currentOrThrow
-    
+    // Changed from currentOrThrow to allow preview to render, as Previews don't have a navigator
+    val navigator = LocalNavigator.current
+
     // Determine grid columns based on window size
     val adaptiveInfo = currentWindowAdaptiveInfo()
     val columns = when (adaptiveInfo.windowSizeClass.windowWidthSizeClass) {
@@ -40,13 +44,14 @@ fun HomeScreen(
         WindowWidthSizeClass.EXPANDED -> 3   // Tablet / desktop
         else -> 1
     }
-    
+
     Scaffold(
         topBar = {
             TVGuideAppBar(
                 title = "Nyní v TV",
                 onSettingsClick = {
-                    navigator.push(SettingsScreen())
+                    // Added safe call as navigator can be null in previews
+                    navigator?.push(SettingsScreen())
                 }
             )
         }
@@ -58,7 +63,7 @@ fun HomeScreen(
                     modifier = Modifier.padding(paddingValues)
                 )
             }
-            
+
             is HomeScreenState.Success -> {
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(columns),
@@ -83,14 +88,14 @@ fun HomeScreen(
                     }
                 }
             }
-            
+
             is HomeScreenState.Empty -> {
                 EmptyState(
                     message = currentState.message,
                     modifier = Modifier.padding(paddingValues)
                 )
             }
-            
+
             is HomeScreenState.Error -> {
                 ErrorState(
                     message = currentState.message,
@@ -99,5 +104,52 @@ fun HomeScreen(
                 )
             }
         }
+    }
+}
+
+@Preview
+@Composable
+fun HomeScreenSuccessPreview() {
+    TvGuideTheme {
+        val programs = MockChannels.nationalChannels.map { channel ->
+            Pair(channel, MockPrograms.all.firstOrNull { it.channelId == channel.id })
+        }
+        HomeScreen(
+            state = HomeScreenState.Success(programs = programs),
+            onRefresh = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun HomeScreenLoadingPreview() {
+    TvGuideTheme {
+        HomeScreen(
+            state = HomeScreenState.Loading,
+            onRefresh = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun HomeScreenEmptyPreview() {
+    TvGuideTheme {
+        HomeScreen(
+            state = HomeScreenState.Empty(message = "Žádné oblíbené kanály"),
+            onRefresh = {}
+        )
+    }
+}
+
+@Preview
+@Composable
+fun HomeScreenErrorPreview() {
+    TvGuideTheme {
+        HomeScreen(
+            state = HomeScreenState.Error(message = "Nepodařilo se načíst programy"),
+            onRefresh = {}
+        )
     }
 }
