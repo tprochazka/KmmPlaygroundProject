@@ -16,7 +16,12 @@ object MockPrograms {
     
     // Anchor time for generation
     private val now = Clock.System.now()
-    private val pragueTz = TimeZone.of("Europe/Prague")
+    private val pragueTz = try {
+        TimeZone.of("Europe/Prague")
+    } catch (e: IllegalTimeZoneException) {
+        // Fallback for wasm, which does not have zone rules.
+        TimeZone.currentSystemDefault()
+    }
     
     /**
      * All generated mock programs (1000+ total).
