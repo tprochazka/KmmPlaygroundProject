@@ -15,7 +15,7 @@ import cz.myapp.tvguide.data.mock.MockChannels
 import cz.myapp.tvguide.data.mock.MockPrograms
 import cz.myapp.tvguide.presentation.components.*
 import cz.myapp.tvguide.presentation.screens.home.HomeScreenState
-import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
+
 import cz.myapp.tvguide.presentation.theme.TvGuideTheme
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -35,6 +35,7 @@ fun HomeScreen(
 ) {
     // Changed from currentOrThrow to allow preview to render, as Previews don't have a navigator
     val navigator = LocalNavigator.current
+    
 
     // Determine grid columns based on window size
     val adaptiveInfo = currentWindowAdaptiveInfo()
@@ -51,7 +52,7 @@ fun HomeScreen(
                 title = "Nyní v TV",
                 onSettingsClick = {
                     // Added safe call as navigator can be null in previews
-                    navigator?.push(SettingsScreen())
+                    navigator?.push(cz.myapp.tvguide.presentation.screens.settings.SettingsScreen())
                 }
             )
         }

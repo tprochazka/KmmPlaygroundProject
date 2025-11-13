@@ -7,7 +7,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import cafe.adriel.voyager.navigator.tab.Tab
 import cafe.adriel.voyager.navigator.tab.TabOptions
+import cafe.adriel.voyager.navigator.Navigator
+import androidx.compose.runtime.LaunchedEffect
 import cz.myapp.tvguide.presentation.screens.FavoritesScreen
+import cz.myapp.tvguide.presentation.components.LocalNavigationVisible
 
 /**
  * Favorites tab - Shows favorite programs and custom channel lists (US2)
@@ -31,6 +34,12 @@ object FavoritesTab : Tab {
     
     @Composable
     override fun Content() {
-        FavoritesScreen.Content()
+        Navigator(FavoritesScreen) { navigator ->
+            val navigationVisible = LocalNavigationVisible.current
+            LaunchedEffect(navigator.size) {
+                navigationVisible.value = navigator.size <= 1
+            }
+            navigator.lastItem.Content()
+        }
     }
 }

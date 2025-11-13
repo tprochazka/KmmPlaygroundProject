@@ -45,7 +45,7 @@ import cz.myapp.tvguide.presentation.components.EmptyState
 import cz.myapp.tvguide.presentation.components.LoadingIndicator
 import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.favorites.FavoritesScreenModel
-import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
+
 
 /**
  * Favorites screen - Manage favorite channels and custom lists (US2)
@@ -55,6 +55,7 @@ object FavoritesScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        
         val screenModel = rememberScreenModel { FavoritesScreenModel() }
         val state by screenModel.state.collectAsState()
         
@@ -73,7 +74,7 @@ object FavoritesScreen : Screen {
                 TVGuideAppBar(
                     title = "Oblíbené Stanice",
                     onSettingsClick = {
-                        navigator.push(SettingsScreen())
+                        navigator.push(cz.myapp.tvguide.presentation.screens.settings.SettingsScreen())
                     }
                 )
             },

@@ -26,7 +26,7 @@ import cz.myapp.tvguide.presentation.components.LoadingIndicator
 import cz.myapp.tvguide.presentation.components.ProgramListItem
 import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
-import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
+
 import cz.myapp.tvguide.presentation.components.*
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -79,6 +79,7 @@ data class ListScreen(
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        
         
         // Get cached screen model - persists across tab switches
         val screenModel = remember(castMemberId) {
@@ -217,6 +218,7 @@ private fun CompactListLayout(
     onBack: () -> Unit
 ) {
     val navigator = LocalNavigator.currentOrThrow
+        
     val initialPage = days.indexOf(selectedDay).coerceAtLeast(0)
     val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { days.size })
     val coroutineScope = rememberCoroutineScope()
@@ -233,7 +235,7 @@ private fun CompactListLayout(
             TVGuideAppBar(
                 title = "Seznam",
                 onSettingsClick = {
-                    navigator.push(SettingsScreen())
+                    navigator.push(cz.myapp.tvguide.presentation.screens.settings.SettingsScreen())
                 }
             )
         }

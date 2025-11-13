@@ -49,7 +49,7 @@ import cz.myapp.tvguide.presentation.components.LoadingIndicator
 import cz.myapp.tvguide.presentation.components.TVGuideAppBar
 import cz.myapp.tvguide.presentation.screens.detail.DetailScreen
 import cz.myapp.tvguide.presentation.screens.epg.EpgScreenModel
-import cz.myapp.tvguide.presentation.screens.settings.SettingsScreen
+
 import cz.myapp.tvguide.util.formatTime
 import kotlin.time.Duration.Companion.hours
 
@@ -61,6 +61,7 @@ object EpgScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
+        
         val screenModel = rememberScreenModel { EpgScreenModel() }
         val state by screenModel.state.collectAsState()
         
@@ -79,7 +80,7 @@ object EpgScreen : Screen {
                 TVGuideAppBar(
                     title = "Mřížka",
                     onSettingsClick = {
-                        navigator.push(SettingsScreen())
+                        navigator.push(cz.myapp.tvguide.presentation.screens.settings.SettingsScreen())
                     },
                     showOverflowMenu = true,
                     actions = {
