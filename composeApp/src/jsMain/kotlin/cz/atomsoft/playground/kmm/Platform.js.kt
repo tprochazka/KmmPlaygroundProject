@@ -1,7 +1,3 @@
 package cz.atomsoft.playground.kmm
 
-class JsPlatform: Platform {
-    override val name: String = "Web with Kotlin/JS"
-}
-
-actual fun getPlatform(): Platform = JsPlatform()
+// Deprecated skeleton platform file neutralized. Removed actual getPlatform() implementation.

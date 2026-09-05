@@ -1,0 +1,253 @@
+package cz.myapp.tvguide.util
+
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.datetime.*
+
+/**
+ * Extension functions for common operations in TV Guide app.
+ */
+// Duration experimental APIs avoided for now to reduce opt-in complexity.
+
+// ============================================================================
+// DateTime Extensions
+// ============================================================================
+
+/**
+ * Format Instant to time string (HH:mm or h:mm a based on format preference).
+ */
+fun Instant.formatTime(use24Hour: Boolean = true, timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    val hour = localDateTime.hour
+    val minute = localDateTime.minute
+    
+    return if (use24Hour) {
+        "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
+    } else {
+        val hour12 = if (hour == 0) 12 else if (hour > 12) hour - 12 else hour
+        val amPm = if (hour < 12) "AM" else "PM"
+        "$hour12:${minute.toString().padStart(2, '0')} $amPm"
+    }
+}
+
+/**
+ * Format Instant to date string (d.M.yyyy).
+ */
+fun Instant.formatDate(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    return "${localDateTime.day}.${localDateTime.month.ordinal + 1}.${localDateTime.year}"
+}
+
+/**
+ * Format Instant to full datetime string (d.M.yyyy HH:mm).
+ */
+fun Instant.formatDateTime(
+    use24Hour: Boolean = true,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): String {
+    return "${formatDate(timeZone)} ${formatTime(use24Hour, timeZone)}"
+}
+
+/**
+ * Format Instant to human-readable relative time (e.g., "2 hours ago", "in 30 minutes").
+ */
+fun Instant.formatRelative(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val now = Clock.System.now()
+    val diffMillis = this.toEpochMilliseconds() - now.toEpochMilliseconds()
+    val minutes = diffMillis / 60_000
+    val hours = diffMillis / 3_600_000
+    val days = diffMillis / 86_400_000
+    return when {
+        minutes == 0L -> "nyní"
+        minutes < 0 && minutes > -60 -> "před ${-minutes} min"
+        minutes > 0 && minutes < 60 -> "za ${minutes} min"
+        hours < 0 && hours > -24 -> "před ${-hours} h"
+        hours > 0 && hours < 24 -> "za ${hours} h"
+        days < 0 -> "před ${-days} dny"
+        days > 0 -> "za ${days} dny"
+        else -> formatDate(timeZone)
+    }
+}
+
+/**
+ * Get day name in Czech (Pondělí, Úterý, ...).
+ */
+fun Instant.getDayName(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    return when (localDateTime.dayOfWeek) {
+        DayOfWeek.MONDAY -> "Pondělí"
+        DayOfWeek.TUESDAY -> "Úterý"
+        DayOfWeek.WEDNESDAY -> "Středa"
+        DayOfWeek.THURSDAY -> "Čtvrtek"
+        DayOfWeek.FRIDAY -> "Pátek"
+        DayOfWeek.SATURDAY -> "Sobota"
+        DayOfWeek.SUNDAY -> "Neděle"
+        else -> ""
+    }
+}
+
+/**
+ * Get short day name in Czech (Po, Út, St, ...).
+ */
+fun Instant.getShortDayName(timeZone: TimeZone = TimeZone.currentSystemDefault()): String {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    return when (localDateTime.dayOfWeek) {
+        DayOfWeek.MONDAY -> "Po"
+        DayOfWeek.TUESDAY -> "Út"
+        DayOfWeek.WEDNESDAY -> "St"
+        DayOfWeek.THURSDAY -> "Čt"
+        DayOfWeek.FRIDAY -> "Pá"
+        DayOfWeek.SATURDAY -> "So"
+        DayOfWeek.SUNDAY -> "Ne"
+        else -> ""
+    }
+}
+
+/**
+ * Check if this Instant is today.
+ */
+fun Instant.isToday(timeZone: TimeZone = TimeZone.currentSystemDefault()): Boolean {
+    val now = Clock.System.now()
+    val thisDate = this.toLocalDateTime(timeZone).date
+    val todayDate = now.toLocalDateTime(timeZone).date
+    return thisDate == todayDate
+}
+
+/**
+ * Check if this Instant is in the past.
+ */
+fun Instant.isPast(): Boolean = this.toEpochMilliseconds() < Clock.System.now().toEpochMilliseconds()
+
+/**
+ * Check if this Instant is in the future.
+ */
+fun Instant.isFuture(): Boolean = this.toEpochMilliseconds() > Clock.System.now().toEpochMilliseconds()
+
+/**
+ * Get start of day for this Instant.
+ */
+fun Instant.startOfDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): Instant {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    return LocalDateTime(
+        localDateTime.year,
+        localDateTime.month,
+        localDateTime.day,
+        0, 0, 0, 0
+    ).toInstant(timeZone)
+}
+
+/**
+ * Get end of day for this Instant.
+ */
+fun Instant.endOfDay(timeZone: TimeZone = TimeZone.currentSystemDefault()): Instant {
+    val localDateTime = this.toLocalDateTime(timeZone)
+    return LocalDateTime(
+        localDateTime.year,
+        localDateTime.month,
+        localDateTime.day,
+        23, 59, 59, 999_999_999
+    ).toInstant(timeZone)
+}
+
+// ============================================================================
+// Duration Extensions
+// ============================================================================
+
+/**
+ * Format Duration to human-readable string (e.g., "2h 30min", "45min").
+ */
+fun formatDuration(start: Instant, end: Instant): String {
+    val totalMinutes = (end.toEpochMilliseconds() - start.toEpochMilliseconds()) / 60_000
+    val hours = totalMinutes / 60
+    val minutes = totalMinutes % 60
+    return when {
+        hours > 0 && minutes > 0 -> "${hours}h ${minutes}min"
+        hours > 0 -> "${hours}h"
+        else -> "${minutes}min"
+    }
+}
+
+// ============================================================================
+// String Extensions
+// ============================================================================
+
+/**
+ * Truncate string to maximum length with ellipsis.
+ */
+fun String.truncate(maxLength: Int, ellipsis: String = "..."): String {
+    return if (length <= maxLength) {
+        this
+    } else {
+        take(maxLength - ellipsis.length) + ellipsis
+    }
+}
+
+/**
+ * Capitalize first letter of each word.
+ */
+fun String.capitalizeWords(): String {
+    return split(" ").joinToString(" ") { word ->
+        word.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+    }
+}
+
+// ============================================================================
+// Collection Extensions
+// ============================================================================
+
+/**
+ * Group list items by a key and preserve order.
+ */
+fun <T, K> List<T>.groupByPreservingOrder(keySelector: (T) -> K): List<Pair<K, List<T>>> {
+    val groups = mutableMapOf<K, MutableList<T>>()
+    val keys = mutableListOf<K>()
+    
+    forEach { item ->
+        val key = keySelector(item)
+        if (key !in groups) {
+            keys.add(key)
+            groups[key] = mutableListOf()
+        }
+        groups[key]!!.add(item)
+    }
+    
+    return keys.map { key -> key to groups[key]!! }
+}
+
+// ============================================================================
+// Number Extensions
+// ============================================================================
+
+/**
+ * Format percentage (0.0 to 1.0) to string with 0-2 decimal places.
+ */
+fun Float.formatPercent(): String {
+    val percent = this * 100
+    return when {
+        percent % 1.0f == 0.0f -> "${percent.toInt()}%"
+        percent % 0.1f == 0.0f -> "${(percent * 10).toInt() / 10.0}%"
+        else -> "${(percent * 100).toInt() / 100.0}%"
+    }
+}
+
+/**
+ * Clamp value between min and max.
+ */
+fun Int.clamp(min: Int, max: Int): Int {
+    return when {
+        this < min -> min
+        this > max -> max
+        else -> this
+    }
+}
+
+/**
+ * Clamp value between min and max.
+ */
+fun Float.clamp(min: Float, max: Float): Float {
+    return when {
+        this < min -> min
+        this > max -> max
+        else -> this
+    }
+}

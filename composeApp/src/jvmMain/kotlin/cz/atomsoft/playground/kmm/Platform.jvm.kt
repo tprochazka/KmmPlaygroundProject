@@ -1,7 +1,4 @@
 package cz.atomsoft.playground.kmm
 
-class JVMPlatform: Platform {
-    override val name: String = "Java ${System.getProperty("java.version")}"
-}
-
-actual fun getPlatform(): Platform = JVMPlatform()
+@Deprecated("Skeleton platform placeholder")
+class JVMPlatform : Platform { override val name: String = "deprecated" }

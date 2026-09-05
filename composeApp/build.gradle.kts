@@ -1,6 +1,8 @@
+import org.gradle.kotlin.dsl.configure
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
@@ -8,6 +10,9 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
+    alias(libs.plugins.metro)
 }
 
 kotlin {
@@ -29,10 +34,12 @@ kotlin {
     
     jvm()
     
-    js {
-        browser()
-        binaries.executable()
-    }
+    // JS target temporarily disabled - programguide library doesn't support it
+    // Re-enable when alternative EPG grid component is available
+    // js {
+    //     browser()
+    //     binaries.executable()
+    // }
     
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs {
@@ -44,6 +51,10 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
+            
+            // Database - Room (Android)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -62,6 +73,20 @@ kotlin {
 	        implementation("tech.annexflow.compose:constraintlayout-compose-multiplatform:0.6.1")
 
 	        implementation("co.touchlab:kermit:2.0.8")
+
+	        // Navigation - Voyager
+	        implementation(libs.voyager.navigator)
+	        implementation(libs.voyager.screenmodel)
+	        implementation(libs.voyager.tabNavigator)
+	        
+	        // Image Loading - Coil 3
+	        implementation(libs.coil.compose)
+	        
+	        // Dependency Injection - Metro DI
+	        implementation(libs.metro.runtime)
+	        
+	        // DateTime
+	        implementation(libs.kotlinx.datetime)
 
 	        // https://chrisbanes.github.io/haze/latest/
 	        implementation("dev.chrisbanes.haze:haze:1.6.10")
@@ -82,11 +107,50 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            
+            // Database - Room (Android)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
         jvmMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            
+            // Database - Room (Desktop)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
+        }
+        iosMain.dependencies {
+            // Database - Room (iOS)
+            implementation(libs.room.runtime)
+            implementation(libs.sqlite.bundled)
         }
     }
+
+    // Global compiler opt-ins for experimental APIs
+    targets.configureEach {
+        compilations.configureEach {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    // Global opt-in for kotlinx-datetime 0.7.x ExperimentalTime API
+                    freeCompilerArgs.add("-opt-in=kotlin.time.ExperimentalTime")
+                    freeCompilerArgs.add("-opt-in=kotlinx.serialization.ExperimentalSerializationApi")
+                }
+            }
+        }
+    }
+}
+
+// Room KSP configuration
+dependencies {
+    add("kspCommonMainMetadata", libs.room.compiler)
+}
+
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {

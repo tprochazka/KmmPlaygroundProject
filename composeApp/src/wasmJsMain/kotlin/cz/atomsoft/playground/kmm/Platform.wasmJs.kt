@@ -1,7 +1,3 @@
 package cz.atomsoft.playground.kmm
 
-class WasmPlatform: Platform {
-    override val name: String = "Web with Kotlin/Wasm"
-}
-
-actual fun getPlatform(): Platform = WasmPlatform()
+// Deprecated skeleton platform file neutralized. Removed actual getPlatform() implementation.
